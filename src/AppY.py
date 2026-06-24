@@ -287,7 +287,7 @@ class App(ctk.CTk):
         return created_widgets
 
     def create_tab1(self, tab):
-        """Popula a Aba 1: Calcular Deslocamento (u_ph)"""
+        """Popula a Aba 1: Calcular Deslocamento"""
         # 1. Defina os inputs que esta aba precisa
         inputs = {
             "material": None,  # O "None" significa "crie o dropdown de material"
@@ -310,14 +310,17 @@ class App(ctk.CTk):
         inputs = {
             "material": None,
             "L": ("Comprimento (L) em metros:", "Ex: 1.5"),
-            "u_ph": ("Deslocamento (u_ph) em mm:", "Ex: 0.123"),
+            "deslocamento_pinhole": ("Deslocamento em mm:", "Ex: 0.123"),
         }
 
         ui = self._create_calculator_ui(tab, inputs, "Calcular Espessura")
 
         ui["button"].configure(
             command=lambda: self.on_calc_espessura(
-                ui["material"].get(), ui["L"].get(), ui["u_ph"].get(), ui["result_box"]
+                ui["material"].get(),
+                ui["L"].get(),
+                ui["deslocamento_pinhole"].get(),
+                ui["result_box"],
             )
         )
 
@@ -327,14 +330,17 @@ class App(ctk.CTk):
             # Note: Sem "material" aqui!
             "L": ("Comprimento (L) em metros:", "Ex: 1.5"),
             "t": ("Espessura (t) em mm:", "Ex: 2.4"),
-            "u_ph": ("Deslocamento (u_ph) medido em mm:", "Ex: 0.123"),
+            "deslocamento_pinhole": ("Deslocamento medido em mm:", "Ex: 0.123"),
         }
 
         ui = self._create_calculator_ui(tab, inputs, "Identificar Material")
 
         ui["button"].configure(
             command=lambda: self.on_calc_identificar(
-                ui["L"].get(), ui["t"].get(), ui["u_ph"].get(), ui["result_box"]
+                ui["L"].get(),
+                ui["t"].get(),
+                ui["deslocamento_pinhole"].get(),
+                ui["result_box"],
             )
         )
 
@@ -343,14 +349,17 @@ class App(ctk.CTk):
         inputs = {
             "material": None,
             "t": ("Espessura (t) em mm:", "Ex: 25.4"),
-            "u_ph": ("Deslocamento (u_ph) em mm:", "Ex: 0.123"),
+            "deslocamento_pinhole": ("Deslocamento em mm:", "Ex: 0.123"),
         }
 
         ui = self._create_calculator_ui(tab, inputs, "Calcular Comprimento")
 
         ui["button"].configure(
             command=lambda: self.on_calc_comprimento(
-                ui["material"].get(), ui["t"].get(), ui["u_ph"].get(), ui["result_box"]
+                ui["material"].get(),
+                ui["t"].get(),
+                ui["deslocamento_pinhole"].get(),
+                ui["result_box"],
             )
         )
 
@@ -410,8 +419,8 @@ class App(ctk.CTk):
 
             # 4. Formatação de Saída (SIMPLES)
             output = (
-                f"Deslocamento (u_ph): {resultado_m * 1000:.4f} mm\n"
-                f"Deslocamento (u_ph): {resultado_m * 1000000:.2f} µm"
+                f"Deslocamento: {resultado_m * 1000:.4f} mm\n"
+                f"Deslocamento: {resultado_m * 1000000:.2f} µm"
             )
             self._update_result_box(result_box, output)
 
@@ -420,20 +429,20 @@ class App(ctk.CTk):
             erro_msg = f"ERRO NA ENTRADA\n--------------------\n{e}"
             self._update_result_box(result_box, erro_msg)
 
-    def on_calc_identificar(self, L_str, t_str, u_ph_str, result_box):
+    def on_calc_identificar(self, L_str, t_str, deslocamento_pinhole_str, result_box):
         try:
             comprimento = self._parse_float(L_str)
             t_mm = self._parse_float(t_str)
-            u_ph_mm = self._parse_float(u_ph_str)
+            deslocamento_pinhole_mm = self._parse_float(deslocamento_pinhole_str)
 
             espessura = t_mm / 1000  # mm para m
-            u_ph_medido = u_ph_mm / 1000  # mm para m
+            deslocamento_pinhole_medido = deslocamento_pinhole_mm / 1000  # mm para m
 
-            if u_ph_medido == 0:
+            if deslocamento_pinhole_medido == 0:
                 raise Exception("Deslocamento medido não pode ser zero.")
 
             material_identificado, diferenca = identificar_material(
-                comprimento, espessura, u_ph_medido
+                comprimento, espessura, deslocamento_pinhole_medido
             )
 
             if material_identificado is None:
@@ -441,7 +450,7 @@ class App(ctk.CTk):
                     "Não foi possível identificar o material (cálculo inválido)."
                 )
 
-            erro_percentual = (diferenca / u_ph_medido) * 100
+            erro_percentual = (diferenca / deslocamento_pinhole_medido) * 100
 
             # 4. Formatação de Saída (SIMPLES)
             output = (
@@ -456,20 +465,22 @@ class App(ctk.CTk):
             erro_msg = f"ERRO NA ENTRADA OU CÁLCULO\n--------------------\n{e}"
             self._update_result_box(result_box, erro_msg)
 
-    def on_calc_comprimento(self, mat_escolha, t_str, u_ph_str, result_box):
+    def on_calc_comprimento(
+        self, mat_escolha, t_str, deslocamento_pinhole_str, result_box
+    ):
         try:
             t_mm = self._parse_float(t_str)
-            u_ph_mm = self._parse_float(u_ph_str)
+            deslocamento_pinhole_mm = self._parse_float(deslocamento_pinhole_str)
 
             espessura = t_mm / 1000  # mm para m
-            u_ph = u_ph_mm / 1000  # mm para m
+            deslocamento_pinhole = deslocamento_pinhole_mm / 1000  # mm para m
 
             props = self._get_material_props(mat_escolha)
             rho = props["densidade"]
             modulo_elasticidade = props["modulo_elasticidade"]
 
             resultado_m = calcular_comprimento_sympy(
-                u_ph, rho, espessura, modulo_elasticidade
+                deslocamento_pinhole, rho, espessura, modulo_elasticidade
             )
 
             if resultado_m is None:
@@ -488,19 +499,21 @@ class App(ctk.CTk):
             erro_msg = f"ERRO NA ENTRADA OU CÁLCULO\n--------------------\n{e}"
             self._update_result_box(result_box, erro_msg)
 
-    def on_calc_espessura(self, mat_escolha, L_str, u_ph_str, result_box):
+    def on_calc_espessura(
+        self, mat_escolha, L_str, deslocamento_pinhole_str, result_box
+    ):
         try:
             comprimento = self._parse_float(L_str)
-            u_ph_mm = self._parse_float(u_ph_str)
+            deslocamento_pinhole_mm = self._parse_float(deslocamento_pinhole_str)
 
-            u_ph = u_ph_mm / 1000  # mm para m
+            deslocamento_pinhole = deslocamento_pinhole_mm / 1000  # mm para m
 
             props = self._get_material_props(mat_escolha)
             rho = props["densidade"]
             modulo_elasticidade = props["modulo_elasticidade"]
 
             resultado_m = calcular_espessura_sympy(
-                u_ph, rho, comprimento, modulo_elasticidade
+                deslocamento_pinhole, rho, comprimento, modulo_elasticidade
             )
 
             if resultado_m is None:

@@ -25,18 +25,18 @@ def calcular_deslocamento(
     """Calcula o deslocamento u_ph do tubo com base nos parâmetros fornecidos."""
     area = calcular_area(espessura, verboso)
     momento_inercia = calcular_momento_inercia(espessura, verboso)
-    E_pa = modulo_elasticidade * 1e9
+    modulo_elasticidade_pa = modulo_elasticidade * 1e9
 
     if verboso:
         print("\n--- Etapas do Cálculo de Deslocamento ---")
         print(f"Área (A): {area:.12e} m^2")
-        print(f"Momento de Inércia (I): {momento_inercia:.12e} m^4")
-        print(f"Módulo de Elasticidade (E): {E_pa:.12e} Pa")
+        print(f"Momento de Inércia: {momento_inercia:.12e} m^4")
+        print(f"Módulo de Elasticidade: {modulo_elasticidade_pa:.12e} Pa")
 
     numerador = (
         densidade * gravidade * area * (comprimento**3) * (3 * comprimento + 4 * l_val)
     )
-    denominador = 24 * E_pa * momento_inercia
+    denominador = 24 * modulo_elasticidade_pa * momento_inercia
     u_ph = numerador / denominador
 
     if verboso:
@@ -83,7 +83,6 @@ def identificar_material(
     return melhor_material, menor_diferenca
 
 
-# (As funções com Sympy permanecem iguais)
 def calcular_comprimento_sympy(
     u_ph, densidade, espessura, modulo_elasticidade, verboso=False
 ):
@@ -93,16 +92,22 @@ def calcular_comprimento_sympy(
     if verboso:
         print("\n--- Iniciando cálculo simbólico para Comprimento (L) ---")
 
-    L_sym = sympy.Symbol("L", real=True, positive=True)
+    comprimento_sym = sympy.Symbol("L", real=True, positive=True)
     area = calcular_area(espessura, verboso)
     momento_inercia = calcular_momento_inercia(espessura, verboso)
-    E_pa = modulo_elasticidade * 1e9
+    modulo_elasticidade_pa = modulo_elasticidade * 1e9
     eq = sympy.Eq(
         u_ph,
-        (densidade * gravidade * area * L_sym**3 * (3 * L_sym + 4 * l_val))  # type:ignore
-        / (24 * E_pa * momento_inercia),
+        (
+            densidade
+            * gravidade
+            * area
+            * comprimento_sym**3
+            * (3 * comprimento_sym + 4 * l_val)  # type:ignore
+        )
+        / (24 * modulo_elasticidade_pa * momento_inercia),
     )
-    solucoes = sympy.solve(eq, L_sym)
+    solucoes = sympy.solve(eq, comprimento_sym)
     for sol in solucoes:
         if sol.is_real and sol > 0:
             return float(sol)
@@ -116,13 +121,13 @@ def calcular_espessura_sympy(
     if verboso:
         print("\n--- Iniciando cálculo simbólico para Espessura ---")
     t_sym = sympy.Symbol("t", real=True, positive=True)
-    E_pa = modulo_elasticidade * 1e9
+    modulo_elasticidade_pa = modulo_elasticidade * 1e9
     A_sym = (sympy.pi / 4) * (D_val**2 - (D_val - 2 * t_sym) ** 2)  # type:ignore
     I_sym = (sympy.pi / 64) * (D_val**4 - (D_val - 2 * t_sym) ** 4)  # type:ignore
     eq = sympy.Eq(
         u_ph,
         (densidade * gravidade * A_sym * comprimento**3 * (3 * comprimento + 4 * l_val))
-        / (24 * E_pa * I_sym),
+        / (24 * modulo_elasticidade_pa * I_sym),
     )
 
     sol = sympy.nsolve(eq, t_sym, 0.001)
@@ -146,9 +151,9 @@ def main():
     u_ph_calculado = calcular_deslocamento(
         rho_exemplo, L_exemplo, t_exemplo, E_exemplo, verboso=True
     )
-    print(f"Comprimento (L): {u_ph_calculado:.6f} m")
-    print(f"Comprimento (L): {u_ph_calculado * 1000:.4f} mm")
-    print(f"Comprimento (L): {u_ph_calculado * 1000000:.2f} µm")
+    print(f"Comprimento: {u_ph_calculado:.6f} m")
+    print(f"Comprimento: {u_ph_calculado * 1000:.4f} mm")
+    print(f"Comprimento: {u_ph_calculado * 1000000:.2f} µm")
     t2 = time()
 
     print(f"\nTempo de execução: {(t2 - t1) * 1000:.6f} milisegundos")
