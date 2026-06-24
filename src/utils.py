@@ -21,7 +21,3 @@ ICON_PATH = os.path.join(BASE_PATH, "logo.ico")  # Para o ícone da janela
 LINK_URL = "https://www.linkedin.com/in/eron-pontes-795b32311/"
 
 ARQUIVO_CSV = Path("src/csv/materiais.csv")
-
-
-class Positive_Float(BaseModel):
-    value: PositiveFloat

@@ -5,7 +5,6 @@ from pathlib import Path
 import customtkinter as ctk
 import pandas as pd
 from PIL import Image, ImageTk
-from pydantic import PositiveFloat, validate_call
 
 from src.parametros_py import (
     calcular_comprimento_sympy,
@@ -215,7 +214,7 @@ class App(ctk.CTk):
         Args:
             parent_tab: O widget da aba (tab) onde construir.
             input_config (dict): Um dicionário definindo os inputs.
-                Ex: {"material": None, "L": ("Label (L):", "Placeholder..."), ...}
+                Ex: {"material": None, "L": ("Label:", "Placeholder..."), ...}
             button_text (str): O texto para o botão de calcular.
 
         Returns:
@@ -292,7 +291,7 @@ class App(ctk.CTk):
         # 1. Defina os inputs que esta aba precisa
         inputs = {
             "material": None,  # O "None" significa "crie o dropdown de material"
-            "L": ("Comprimento (L) em metros:", "Ex: 1.5"),
+            "L": ("Comprimento em metros:", "Ex: 1.5"),
             "t": ("Espessura (t) em mm:", "Ex: 25.4"),
         }
 
@@ -310,7 +309,7 @@ class App(ctk.CTk):
         """Popula a Aba 2: Calcular Espessura (t)"""
         inputs = {
             "material": None,
-            "L": ("Comprimento (L) em metros:", "Ex: 1.5"),
+            "L": ("Comprimento em metros:", "Ex: 1.5"),
             "deslocamento_pinhole": ("Deslocamento em mm:", "Ex: 0.123"),
         }
 
@@ -329,7 +328,7 @@ class App(ctk.CTk):
         """Popula a Aba 3: Identificar Material"""
         inputs = {
             # Note: Sem "material" aqui!
-            "L": ("Comprimento (L) em metros:", "Ex: 1.5"),
+            "L": ("Comprimento em metros:", "Ex: 1.5"),
             "t": ("Espessura (t) em mm:", "Ex: 2.4"),
             "deslocamento_pinhole": ("Deslocamento medido em mm:", "Ex: 0.123"),
         }
@@ -346,7 +345,7 @@ class App(ctk.CTk):
         )
 
     def create_tab4(self, tab):
-        """Popula a Aba 4: Calcular Comprimento (L)"""
+        """Popula a Aba 4: Calcular Comprimento"""
         inputs = {
             "material": None,
             "t": ("Espessura (t) em mm:", "Ex: 25.4"),
@@ -476,9 +475,7 @@ class App(ctk.CTk):
             deslocamento_pinhole_mm = self._parse_float(deslocamento_pinhole_str)
 
             espessura = t_mm / 1000  # mm para m
-            deslocamento_pinhole: PositiveFloat = (
-                deslocamento_pinhole_mm / 1000
-            )  # mm para m
+            deslocamento_pinhole = deslocamento_pinhole_mm / 1000  # mm para m
 
             props = self._get_material_props(mat_escolha)
             rho = props["densidade"]
@@ -495,8 +492,8 @@ class App(ctk.CTk):
 
             # 4. Formatação de Saída (SIMPLES)
             output = (
-                f"Comprimento (L): {resultado_m:.6f} m\n"
-                f"Comprimento (L): {resultado_m * 1000:.4f} mm"
+                f"Comprimento: {resultado_m:.6f} m\n"
+                f"Comprimento: {resultado_m * 1000:.4f} mm"
             )
             self._update_result_box(result_box, output)
 

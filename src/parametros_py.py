@@ -160,7 +160,7 @@ def calcular_espessura_sympy(
         / (24 * modulo_elasticidade_pa * momento_inercia_sym),
     )
 
-    sol = sympy.nsolve(eq, t_sym, 0.001)
+    sol = sympy.solve(eq, t_sym, 0.001)
     # if sol.is_real and 0 < sol < D_val / 2:
     return float(sol)
 
