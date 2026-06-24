@@ -1,28 +1,18 @@
 import os
 import webbrowser
+from pathlib import Path
 
 import customtkinter as ctk
+import pandas as pd
 from PIL import Image, ImageTk
 
-from parametros_py import (
+from src.parametros_py import (
     calcular_comprimento_sympy,
     calcular_deslocamento,
     calcular_espessura_sympy,
     identificar_material,
-    materiais,
 )
-
-# =============================================================================
-# --- Define Caminhos de Arquivo ---
-# Obtém o caminho absoluto do diretório onde este script está localizado
-BASE_PATH = os.path.dirname(os.path.abspath(__file__))
-
-# Define os caminhos completos para seus arquivos de imagem
-LOGO_PATH = os.path.join(BASE_PATH, "logo.png")  # Para o cabeçalho
-ICON_PATH = os.path.join(BASE_PATH, "logo.ico")  # Para o ícone da janela
-# =============================================================================
-
-LINK_URL = "https://www.linkedin.com/in/eron-pontes-795b32311/"
+from src.utils import ARQUIVO_CSV, ICON_PATH, LINK_URL, LOGO_PATH
 
 
 class App(ctk.CTk):
@@ -47,7 +37,9 @@ class App(ctk.CTk):
         ctk.set_default_color_theme("blue")
         self.button_color = "#14386e"
 
-        self.materiais_list = [materiais[key]["nome"] for key in materiais]
+        materiais = pd.read_csv(ARQUIVO_CSV)
+
+        self.materiais_list = materiais["nome"].to_list()
 
         # --- Layout principal (Corrigido para 3 linhas) ---
         self.grid_columnconfigure(0, weight=1)
@@ -383,14 +375,19 @@ class App(ctk.CTk):
         Encontra e retorna o dicionário de propriedades do material.
         Lança um Exception se não encontrar.
         """
-        for key, value in materiais.items():
-            if value["nome"] == mat_escolha:
-                return value  # Retorna o dicionário de propriedades (ex: props["densidade"])
+        materiais = pd.read_csv(ARQUIVO_CSV)
 
-        # Se o loop terminar sem encontrar, lança um erro
-        raise Exception(
-            f"Material '{mat_escolha}' não foi encontrado no banco de dados."
-        )
+        if mat_escolha not in materiais["nome"].to_list():
+            # Se o loop terminar sem encontrar, lança um erro
+            raise Exception(
+                f"Material '{mat_escolha}' não foi encontrado no banco de dados."
+            )
+
+        material = materiais[materiais["nome"] == mat_escolha]
+        return {col: material[col].values[0] for col in material.columns}
+        # for key, value in materiais.items():
+        #     if value["nome"] == mat_escolha:
+        #         return value  # Retorna o dicionário de propriedades (ex: props["densidade"])
 
     # --- Funções de Callback (Lógica da UI) ---
 
@@ -510,12 +507,3 @@ class App(ctk.CTk):
         except (ValueError, Exception) as e:
             erro_msg = f"ERRO NA ENTRADA OU CÁLCULO\n--------------------\n{e}"
             self._update_result_box(result_box, erro_msg)
-
-
-if __name__ == "__main__":
-    if not os.path.exists(LOGO_PATH):
-        print(f"DEBUG: logo.png not found at {LOGO_PATH}")
-    if not os.path.exists(ICON_PATH):
-        print(f"DEBUG: logo.ico not found at {ICON_PATH}")
-    app = App()
-    app.mainloop()

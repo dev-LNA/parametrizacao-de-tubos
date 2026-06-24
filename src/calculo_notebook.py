@@ -5,7 +5,7 @@ from typing import Any
 import pandas as pd
 import sympy
 
-from utils import D_val, gravidade, l_val
+from src.utils import ARQUIVO_CSV, D_val, gravidade, l_val
 
 
 def calcular_area(espessura):
@@ -52,8 +52,7 @@ def identificar_material(
 
     melhor_material = None
     menor_diferenca = float("inf")
-    arquivo_csv = Path("csv/materiais.csv")
-    materiais = pd.read_csv(arquivo_csv)
+    materiais = pd.read_csv(ARQUIVO_CSV)
 
     for _, linha in materiais.iterrows():
         densidade = linha["densidade"]
@@ -87,8 +86,7 @@ def identificar_material_1(
 
     melhor_material = None
     menor_diferenca = float("inf")
-    arquivo_csv = Path("csv/materiais.csv")
-    materiais = pd.read_csv(arquivo_csv)
+    materiais = pd.read_csv(ARQUIVO_CSV)
 
     for _, linha in materiais.iterrows():
         densidade = linha["densidade"]
@@ -193,17 +191,18 @@ def main():
 
         else:
             print("\nEscolha o material (digite o nome exato):")
-            arquivo_csv = Path("csv/materiais.csv")
-            materiais = pd.read_csv(arquivo_csv)
+            materiais = pd.read_csv(ARQUIVO_CSV)
+
             for apelido in materiais["apelido"]:
                 print(f"- {apelido}")
             mat_escolha = input("Digite o nome do material: ").lower()
-            if mat_escolha not in materiais:
+            if mat_escolha not in materiais["apelido"]:
                 print("Material não encontrado!")
                 return
 
-            rho_material = materiais[mat_escolha]["densidade"]
-            E_material = materiais[mat_escolha]["modulo_elasticidade"]
+            material = materiais[materiais["apelido"] == mat_escolha]
+            rho_material = material["densidade"].values[0]
+            E_material = material["modulo_elasticidade"].values[0]
 
             print("\n--- Variáveis Conhecidas ---")
             print(f"Material: {mat_escolha}")

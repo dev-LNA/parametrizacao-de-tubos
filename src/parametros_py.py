@@ -6,7 +6,7 @@ from typing import Any
 import pandas as pd
 import sympy
 
-from utils import D_val, gravidade, l_val
+from src.utils import ARQUIVO_CSV, D_val, gravidade, l_val
 
 
 def calcular_area(espessura, verboso=False):
@@ -58,8 +58,7 @@ def identificar_material(
     melhor_material = None
     menor_diferenca = float("inf")
 
-    arquivo_csv = Path("docs/materiais.csv")
-    materiais = pd.read_csv(arquivo_csv)
+    materiais = pd.read_csv(ARQUIVO_CSV)
 
     for _, linha in materiais.iterrows():
         densidade = linha["densidade"]
@@ -136,8 +135,7 @@ def main():
     t1 = time()
     # Exemplo de uso das funções
 
-    arquivo_csv = Path("docs/materiais.csv")
-    materiais = pd.read_csv(arquivo_csv)
+    materiais = pd.read_csv(ARQUIVO_CSV)
     material = materiais[materiais["apelido"] == "aluminio_6061_t6"]
 
     rho_exemplo = material["densidade"].values[0]
