@@ -3,6 +3,7 @@ from typing import Any
 
 import pandas as pd
 import sympy
+from pydantic import PositiveFloat, validate_call
 
 from src.utils import ARQUIVO_CSV, D_val, gravidade, l_val
 
@@ -78,10 +79,11 @@ def identificar_material(
     return melhor_material, menor_diferenca
 
 
+@validate_call
 def calcular_comprimento_sympy(
-    deslocamento_pinhole, densidade, espessura, modulo_elasticidade
+    deslocamento_pinhole: PositiveFloat, densidade, espessura, modulo_elasticidade
 ) -> float | None:
-    print("\n--- Iniciando cálculo simbólico para Comprimento (L) ---")
+    print("\n--- Iniciando cálculo simbólico para Comprimento ---")
     L_sym = sympy.Symbol("L", real=True, positive=True)
     area = calcular_area(espessura)
     momento_inercia = calcular_momento_inercia(espessura)
@@ -178,22 +180,20 @@ def main():
                 return
 
             material = materiais[materiais["apelido"] == mat_escolha]
-            rho_material = material["densidade"].values[0]
+            densidade_material = material["densidade"].values[0]
             E_material = material["modulo_elasticidade"].values[0]
 
             print("\n--- Variáveis Conhecidas ---")
             print(f"Material: {mat_escolha}")
-            print(f"Densidade (ρ): {rho_material} kg/m^3")
-            print(f"Módulo de Elasticidade (E): {E_material} GPa")
+            print(f"Densidade: {densidade_material} kg/m^3")
+            print(f"Módulo de Elasticidade: {E_material} GPa")
             print("-" * 30)
 
             if escolha == "1":
-                comprimento = float(
-                    input("Digite o Comprimento do Tubo (L) em metros: ")
-                )
+                comprimento = float(input("Digite o Comprimento do Tubo em metros: "))
                 espessura = float(input("Digite a Espessura da Parede em mm: ")) / 1000
                 resultado_m = calcular_deslocamento(
-                    rho_material, comprimento, espessura, E_material
+                    densidade_material, comprimento, espessura, E_material
                 )
                 print("\n--- Resultado Final ---")
                 print(f"Deslocamento: {resultado_m * 1000:.4f} mm")
@@ -205,26 +205,24 @@ def main():
                     float(input("Digite o Deslocamento do Pinhole em mm: ")) / 1000
                 )
                 resultado_m = calcular_comprimento_sympy(
-                    deslocamento_pinhole, rho_material, espessura, E_material
+                    deslocamento_pinhole, densidade_material, espessura, E_material
                 )
                 if resultado_m is not None:
                     print("\n--- Resultado Final ---")
-                    print(f"Comprimento (L): {resultado_m:.6f} m")
-                    print(f"Comprimento (L): {resultado_m * 1000:.4f} mm")
-                    print(f"Comprimento (L): {resultado_m * 1000000:.2f} µm")
+                    print(f"Comprimento: {resultado_m:.6f} m")
+                    print(f"Comprimento: {resultado_m * 1000:.4f} mm")
+                    print(f"Comprimento: {resultado_m * 1000000:.2f} µm")
                 else:
                     print("\n--- Falha no Cálculo ---")
                     print("Não foi possível encontrar uma solução real e positiva.")
 
             elif escolha == "4":
-                comprimento = float(
-                    input("Digite o Comprimento do Tubo (L) em metros: ")
-                )
+                comprimento = float(input("Digite o Comprimento do Tubo em metros: "))
                 deslocamento_pinhole = (
                     float(input("Digite o Deslocamento do Pinhole em mm: ")) / 1000
                 )
                 resultado_m = calcular_espessura_sympy(
-                    deslocamento_pinhole, rho_material, comprimento, E_material
+                    deslocamento_pinhole, densidade_material, comprimento, E_material
                 )
                 if resultado_m is not None:
                     print("\n--- Resultado Final ---")

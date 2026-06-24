@@ -5,6 +5,7 @@ from pathlib import Path
 import customtkinter as ctk
 import pandas as pd
 from PIL import Image, ImageTk
+from pydantic import PositiveFloat, validate_call
 
 from src.parametros_py import (
     calcular_comprimento_sympy,
@@ -400,11 +401,11 @@ class App(ctk.CTk):
 
     # --- Funções de Callback (Lógica da UI) ---
 
-    def on_calc_deslocamento(self, mat_escolha, L_str, t_str, result_box):
+    def on_calc_deslocamento(self, mat_escolha, L_str, espessura_str, result_box):
         try:
             # 1. Validação e Conversão
             comprimento = self._parse_float(L_str)
-            t_mm = self._parse_float(t_str)
+            t_mm = self._parse_float(espessura_str)
             espessura = t_mm / 1000  # Converte mm para m
 
             # 2. Busca de Material
@@ -424,15 +425,17 @@ class App(ctk.CTk):
             )
             self._update_result_box(result_box, output)
 
-        except (ValueError, Exception) as e:
+        except Exception as e:
             # 5. Tratamento de Erro
             erro_msg = f"ERRO NA ENTRADA\n--------------------\n{e}"
             self._update_result_box(result_box, erro_msg)
 
-    def on_calc_identificar(self, L_str, t_str, deslocamento_pinhole_str, result_box):
+    def on_calc_identificar(
+        self, L_str, espessura_str, deslocamento_pinhole_str, result_box
+    ):
         try:
             comprimento = self._parse_float(L_str)
-            t_mm = self._parse_float(t_str)
+            t_mm = self._parse_float(espessura_str)
             deslocamento_pinhole_mm = self._parse_float(deslocamento_pinhole_str)
 
             espessura = t_mm / 1000  # mm para m
@@ -461,19 +464,21 @@ class App(ctk.CTk):
             )
             self._update_result_box(result_box, output)
 
-        except (ValueError, Exception) as e:
+        except Exception as e:
             erro_msg = f"ERRO NA ENTRADA OU CÁLCULO\n--------------------\n{e}"
             self._update_result_box(result_box, erro_msg)
 
     def on_calc_comprimento(
-        self, mat_escolha, t_str, deslocamento_pinhole_str, result_box
+        self, mat_escolha, espessura_str, deslocamento_pinhole_str, result_box
     ):
         try:
-            t_mm = self._parse_float(t_str)
+            t_mm = self._parse_float(espessura_str)
             deslocamento_pinhole_mm = self._parse_float(deslocamento_pinhole_str)
 
             espessura = t_mm / 1000  # mm para m
-            deslocamento_pinhole = deslocamento_pinhole_mm / 1000  # mm para m
+            deslocamento_pinhole: PositiveFloat = (
+                deslocamento_pinhole_mm / 1000
+            )  # mm para m
 
             props = self._get_material_props(mat_escolha)
             rho = props["densidade"]
@@ -495,7 +500,7 @@ class App(ctk.CTk):
             )
             self._update_result_box(result_box, output)
 
-        except (ValueError, Exception) as e:
+        except Exception as e:
             erro_msg = f"ERRO NA ENTRADA OU CÁLCULO\n--------------------\n{e}"
             self._update_result_box(result_box, erro_msg)
 
@@ -525,6 +530,6 @@ class App(ctk.CTk):
             output = f"Espessura da Parede (t): {resultado_m * 1000:.4f} mm"
             self._update_result_box(result_box, output)
 
-        except (ValueError, Exception) as e:
+        except Exception as e:
             erro_msg = f"ERRO NA ENTRADA OU CÁLCULO\n--------------------\n{e}"
             self._update_result_box(result_box, erro_msg)
