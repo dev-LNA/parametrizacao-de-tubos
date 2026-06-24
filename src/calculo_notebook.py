@@ -1,24 +1,23 @@
 import math
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
 import sympy
 
-# --- Base de Dados de Materiais ---
-materiais = {
-    "aluminio_6061_o": {"densidade": 2700, "modulo_elasticidade": 68.9},
-    "aluminio_6061_t6": {"densidade": 2700, "modulo_elasticidade": 69},
-    "aluminio_5052_h32": {"densidade": 2680, "modulo_elasticidade": 70.3},
-    "inox_304": {"densidade": 7990, "modulo_elasticidade": 193},
-    "inox_316": {"densidade": 7990, "modulo_elasticidade": 193},
-    "inox_430": {"densidade": 7800, "modulo_elasticidade": 200},
-    "aco_carbono_1045": {"densidade": 7850, "modulo_elasticidade": 205},
-}
+from utils import D_val, g_val, l_val
 
-# --- Parâmetros Fixos ---
-g_val = 9.81
-l_val = 100 / 1000
-D_val = 100 / 1000
+# --- Base de Dados de Materiais ---
+# materiais = {
+#     "aluminio_6061_o": {"densidade": 2700, "modulo_elasticidade": 68.9},
+#     "aluminio_6061_t6": {"densidade": 2700, "modulo_elasticidade": 69},
+#     "aluminio_5052_h32": {"densidade": 2680, "modulo_elasticidade": 70.3},
+#     "inox_304": {"densidade": 7990, "modulo_elasticidade": 193},
+#     "inox_316": {"densidade": 7990, "modulo_elasticidade": 193},
+#     "inox_430": {"densidade": 7800, "modulo_elasticidade": 200},
+#     "aco_carbono_1045": {"densidade": 7850, "modulo_elasticidade": 205},
+# }
+
 
 # --- Funções de Cálculo ---
 
@@ -31,20 +30,20 @@ def calcular_momento_inercia(t):
     return (math.pi / 64) * (D_val**4 - (D_val - 2 * t) ** 4)
 
 
-def calcular_deslocamento(rho, L, t, E, verboso=True):
+def calcular_deslocamento(densidade, L, t, modulo_elasticidade, verboso=True):
     """Calcula o deslocamento. O modo 'verboso=False' é para uso interno."""
-    A = calcular_area(t)
-    I = calcular_momento_inercia(t)
-    E_pa = E * 1e9
+    area = calcular_area(t)
+    momento_inercia = calcular_momento_inercia(t)
+    E_pa = modulo_elasticidade * 1e9
 
     if verboso:
         print("\n--- Etapas do Cálculo de Deslocamento ---")
-        print(f"Área (A): {A:.1e} m^2")
-        print(f"Momento de Inércia (I): {I:.12f} m^4")
+        print(f"Área (A): {area:.1e} m^2")
+        print(f"Momento de Inércia (I): {momento_inercia:.12f} m^4")
         print(f"Módulo de Elasticidade (E): {E_pa:.2e} Pa")
 
-    numerador = rho * g_val * A * (L**3) * (3 * L + 4 * l_val)
-    denominador = 24 * E_pa * I
+    numerador = densidade * g_val * area * (L**3) * (3 * L + 4 * l_val)
+    denominador = 24 * E_pa * momento_inercia
     u_ph = numerador / denominador
 
     if verboso:
@@ -61,13 +60,51 @@ def identificar_material(L, t, u_ph_medido) -> tuple[str | None, float | Any]:
 
     melhor_material = None
     menor_diferenca = float("inf")
+    arquivo_csv = Path("csv/materiais.csv")
+    materiais = pd.read_csv(arquivo_csv)
 
-    for nome, propriedades in materiais.items():
-        rho = propriedades["densidade"]
-        E = propriedades["modulo_elasticidade"]
+    for _, linha in materiais.iterrows():
+        densidade = linha["densidade"]
+        modulo_elasticidade = linha["modulo_elasticidade"]
+        nome = linha["nome"]
 
         # Calcula o deslocamento teórico para este material, sem imprimir os passos
-        u_ph_teorico = calcular_deslocamento(rho, L, t, E, verboso=False)
+        u_ph_teorico = calcular_deslocamento(
+            densidade, L, t, modulo_elasticidade, verboso=False
+        )
+
+        diferenca = abs(u_ph_teorico - u_ph_medido)
+
+        print(
+            f"  - Testando '{nome}': deslocamento teórico = {u_ph_teorico * 1000:.4f} mm (Diferença: {diferenca * 1000:.4f} mm)"
+        )
+
+        if diferenca < menor_diferenca:
+            menor_diferenca = diferenca
+            melhor_material = nome
+
+    return melhor_material, menor_diferenca
+
+
+def identificar_material_1(L, t, u_ph_medido) -> tuple[str | None, float | Any]:
+    """Compara o deslocamento medido com o deslocamento teórico de cada material."""
+    print("\n--- Iniciando Processo de Identificação ---")
+    print(f"A comparar com deslocamento medido de {u_ph_medido * 1000:.4f} mm...")
+
+    melhor_material = None
+    menor_diferenca = float("inf")
+    arquivo_csv = Path("csv/materiais.csv")
+    materiais = pd.read_csv(arquivo_csv)
+
+    for _, linha in materiais.iterrows():
+        densidade = linha["densidade"]
+        modulo_elasticidade = linha["modulo_elasticidade"]
+        nome = linha["nome"]
+
+        # Calcula o deslocamento teórico para este material, sem imprimir os passos
+        u_ph_teorico = calcular_deslocamento(
+            densidade, L, t, modulo_elasticidade, verboso=False
+        )
 
         diferenca = abs(u_ph_teorico - u_ph_medido)
 
@@ -83,15 +120,16 @@ def identificar_material(L, t, u_ph_medido) -> tuple[str | None, float | Any]:
 
 
 # (As funções com Sympy permanecem iguais)
-def calcular_comprimento_sympy(u_ph, rho, t, E) -> float | None:
+def calcular_comprimento_sympy(u_ph, densidade, t, modulo_elasticidade) -> float | None:
     print("\n--- Iniciando cálculo simbólico para Comprimento (L) ---")
     L_sym = sympy.Symbol("L", real=True, positive=True)
-    A = calcular_area(t)
-    I = calcular_momento_inercia(t)
-    E_pa = E * 1e9
+    area = calcular_area(t)
+    momento_inercia = calcular_momento_inercia(t)
+    E_pa = modulo_elasticidade * 1e9
     eq = sympy.Eq(
         u_ph,
-        (rho * g_val * A * L_sym**3 * (3 * L_sym + 4 * l_val)) / (24 * E_pa * I),  # type: ignore
+        (densidade * g_val * area * L_sym**3 * (3 * L_sym + 4 * l_val))  # type: ignore
+        / (24 * E_pa * momento_inercia),
     )
     solucoes = sympy.solve(eq, L_sym)
     for sol in solucoes:
@@ -100,14 +138,15 @@ def calcular_comprimento_sympy(u_ph, rho, t, E) -> float | None:
     return None
 
 
-def calcular_espessura_sympy(u_ph, rho, L, E) -> float | None:
+def calcular_espessura_sympy(u_ph, densidade, L, modulo_elasticidade) -> float | None:
     print("\n--- Iniciando cálculo simbólico para Espessura (t) ---")
     t_sym = sympy.Symbol("t", real=True, positive=True)
-    E_pa = E * 1e9
+    E_pa = modulo_elasticidade * 1e9
     A_sym = (sympy.pi / 4) * (D_val**2 - (D_val - 2 * t_sym) ** 2)  # type: ignore
     I_sym = (sympy.pi / 64) * (D_val**4 - (D_val - 2 * t_sym) ** 4)  # type: ignore
     eq = sympy.Eq(
-        u_ph, (rho * g_val * A_sym * L**3 * (3 * L + 4 * l_val)) / (24 * E_pa * I_sym)
+        u_ph,
+        (densidade * g_val * A_sym * L**3 * (3 * L + 4 * l_val)) / (24 * E_pa * I_sym),
     )
     try:
         sol = sympy.nsolve(eq, t_sym, 0.001)
@@ -153,8 +192,10 @@ def main():
 
         else:
             print("\nEscolha o material (digite o nome exato):")
-            for mat in materiais:
-                print(f"- {mat}")
+            arquivo_csv = Path("csv/materiais.csv")
+            materiais = pd.read_csv(arquivo_csv)
+            for apelido in materiais["apelido"]:
+                print(f"- {apelido}")
             mat_escolha = input("Digite o nome do material: ").lower()
             if mat_escolha not in materiais:
                 print("Material não encontrado!")
@@ -173,7 +214,7 @@ def main():
                 L = float(input("Digite o Comprimento do Tubo (L) em metros: "))
                 t = float(input("Digite a Espessura da Parede (t) em mm: ")) / 1000
                 resultado_m = calcular_deslocamento(rho_material, L, t, E_material)
-                print(f"\n--- Resultado Final ---")
+                print("\n--- Resultado Final ---")
                 print(f"Deslocamento (u_ph): {resultado_m * 1000:.4f} mm")
                 print(f"Deslocamento (u_ph): {resultado_m * 1000000:.2f} µm")
 
@@ -187,7 +228,7 @@ def main():
                     u_ph, rho_material, t, E_material
                 )
                 if resultado_m is not None:
-                    print(f"\n--- Resultado Final ---")
+                    print("\n--- Resultado Final ---")
                     print(f"Comprimento (L): {resultado_m:.6f} m")
                     print(f"Comprimento (L): {resultado_m * 1000:.4f} mm")
                     print(f"Comprimento (L): {resultado_m * 1000000:.2f} µm")
@@ -205,7 +246,7 @@ def main():
                     u_ph, rho_material, L, E_material
                 )
                 if resultado_m is not None:
-                    print(f"\n--- Resultado Final ---")
+                    print("\n--- Resultado Final ---")
                     print(f"Espessura da Parede (t): {resultado_m * 1000:.4f} mm")
                 else:
                     print("\n--- Falha no Cálculo ---")
