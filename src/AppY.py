@@ -394,17 +394,19 @@ class App(ctk.CTk):
     def on_calc_deslocamento(self, mat_escolha, L_str, t_str, result_box):
         try:
             # 1. Validação e Conversão
-            L = self._parse_float(L_str)
+            comprimento = self._parse_float(L_str)
             t_mm = self._parse_float(t_str)
-            t = t_mm / 1000  # Converte mm para m
+            espessura = t_mm / 1000  # Converte mm para m
 
             # 2. Busca de Material
             props = self._get_material_props(mat_escolha)
             rho = props["densidade"]
-            E = props["modulo_elasticidade"]
+            modulo_elasticidade = props["modulo_elasticidade"]
 
             # 3. Cálculo
-            resultado_m = calcular_deslocamento(rho, L, t, E)
+            resultado_m = calcular_deslocamento(
+                rho, comprimento, espessura, modulo_elasticidade
+            )
 
             # 4. Formatação de Saída (SIMPLES)
             output = (
@@ -420,17 +422,19 @@ class App(ctk.CTk):
 
     def on_calc_identificar(self, L_str, t_str, u_ph_str, result_box):
         try:
-            L = self._parse_float(L_str)
+            comprimento = self._parse_float(L_str)
             t_mm = self._parse_float(t_str)
             u_ph_mm = self._parse_float(u_ph_str)
 
-            t = t_mm / 1000  # mm para m
+            espessura = t_mm / 1000  # mm para m
             u_ph_medido = u_ph_mm / 1000  # mm para m
 
             if u_ph_medido == 0:
                 raise Exception("Deslocamento medido não pode ser zero.")
 
-            material_identificado, diferenca = identificar_material(L, t, u_ph_medido)
+            material_identificado, diferenca = identificar_material(
+                comprimento, espessura, u_ph_medido
+            )
 
             if material_identificado is None:
                 raise Exception(
@@ -457,14 +461,16 @@ class App(ctk.CTk):
             t_mm = self._parse_float(t_str)
             u_ph_mm = self._parse_float(u_ph_str)
 
-            t = t_mm / 1000  # mm para m
+            espessura = t_mm / 1000  # mm para m
             u_ph = u_ph_mm / 1000  # mm para m
 
             props = self._get_material_props(mat_escolha)
             rho = props["densidade"]
-            E = props["modulo_elasticidade"]
+            modulo_elasticidade = props["modulo_elasticidade"]
 
-            resultado_m = calcular_comprimento_sympy(u_ph, rho, t, E)
+            resultado_m = calcular_comprimento_sympy(
+                u_ph, rho, espessura, modulo_elasticidade
+            )
 
             if resultado_m is None:
                 raise Exception(
@@ -484,16 +490,18 @@ class App(ctk.CTk):
 
     def on_calc_espessura(self, mat_escolha, L_str, u_ph_str, result_box):
         try:
-            L = self._parse_float(L_str)
+            comprimento = self._parse_float(L_str)
             u_ph_mm = self._parse_float(u_ph_str)
 
             u_ph = u_ph_mm / 1000  # mm para m
 
             props = self._get_material_props(mat_escolha)
             rho = props["densidade"]
-            E = props["modulo_elasticidade"]
+            modulo_elasticidade = props["modulo_elasticidade"]
 
-            resultado_m = calcular_espessura_sympy(u_ph, rho, L, E)
+            resultado_m = calcular_espessura_sympy(
+                u_ph, rho, comprimento, modulo_elasticidade
+            )
 
             if resultado_m is None:
                 raise Exception(
