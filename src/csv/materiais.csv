@@ -1,0 +1,9 @@
+nickname,nome,densidade,modulo_elasticidade
+"aluminio_6061_o","Al 6061-O",2700,68.9
+"aluminio_6061_t6","Al 6061-T6",2700,69
+"aluminio_5052_h32","Al 5052-H32",2680,70.3
+"inox_304","Inox 304",7990,193
+"inox_316","Inox 316",7990,193
+"inox_430","Inox 430",7800,200
+"aco_carbono_1045","Aço 1045",7850,205
+

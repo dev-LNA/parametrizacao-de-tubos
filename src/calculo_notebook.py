@@ -1,6 +1,7 @@
 import math
 from typing import Any
 
+import pandas as pd
 import sympy
 
 # --- Base de Dados de Materiais ---
