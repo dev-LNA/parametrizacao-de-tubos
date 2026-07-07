@@ -12,7 +12,7 @@ from src.parametros_py import (
     calcular_espessura_sympy,
     identificar_material,
 )
-from src.utils import ARQUIVO_CSV, ICON_PATH, LINK_URL, LOGO_PATH
+from src.utils import ARQUIVO_CSV, ICON_PATH, LINK_URL, LOGO_PATH, obter_caminho_recurso
 
 
 class App(ctk.CTk):
@@ -37,7 +37,8 @@ class App(ctk.CTk):
         ctk.set_default_color_theme("blue")
         self.button_color = "#14386e"
 
-        materiais = pd.read_csv(ARQUIVO_CSV)
+        caminho_arquivo_csv = obter_caminho_recurso() / ARQUIVO_CSV
+        materiais = pd.read_csv(caminho_arquivo_csv)
 
         self.materiais_list = materiais["nome"].to_list()
 
@@ -384,7 +385,8 @@ class App(ctk.CTk):
         Encontra e retorna o dicionário de propriedades do material.
         Lança um Exception se não encontrar.
         """
-        materiais = pd.read_csv(ARQUIVO_CSV)
+        caminho_arquivo_csv = obter_caminho_recurso() / ARQUIVO_CSV
+        materiais = pd.read_csv(caminho_arquivo_csv)
 
         if mat_escolha not in materiais["nome"].to_list():
             # Se o loop terminar sem encontrar, lança um erro

@@ -1,15 +1,32 @@
 import math
+
 import sympy
 
 # --- Base de Dados de Materiais ---
 materiais = {
-    "aluminio_6061_o": {"nome": "Al 6061-O", "densidade": 2700, "modulo_elasticidade": 68.9},
-    "aluminio_6061_t6": {"nome": "Al 6061-T6", "densidade": 2700, "modulo_elasticidade": 69},
-    "aluminio_5052_h32": {"nome": "Al 5052-H32", "densidade": 2680, "modulo_elasticidade": 70.3},
+    "aluminio_6061_o": {
+        "nome": "Al 6061-O",
+        "densidade": 2700,
+        "modulo_elasticidade": 68.9,
+    },
+    "aluminio_6061_t6": {
+        "nome": "Al 6061-T6",
+        "densidade": 2700,
+        "modulo_elasticidade": 69,
+    },
+    "aluminio_5052_h32": {
+        "nome": "Al 5052-H32",
+        "densidade": 2680,
+        "modulo_elasticidade": 70.3,
+    },
     "inox_304": {"nome": "Inox 304", "densidade": 7990, "modulo_elasticidade": 193},
     "inox_316": {"nome": "Inox 316", "densidade": 7990, "modulo_elasticidade": 193},
     "inox_430": {"nome": "Inox 430", "densidade": 7800, "modulo_elasticidade": 200},
-    "aco_carbono_1045": {"nome": "Aço 1045", "densidade": 7850, "modulo_elasticidade": 205},
+    "aco_carbono_1045": {
+        "nome": "Aço 1045",
+        "densidade": 7850,
+        "modulo_elasticidade": 205,
+    },
 }
 
 # --- Parâmetros Fixos ---
@@ -54,7 +71,7 @@ def calcular_deslocamento(rho, L, t, E, verboso=False):
 
 def identificar_material(L, t, u_ph_medido, verboso=False):
     """Compara o deslocamento medido com o deslocamento teórico de cada material."""
-    
+
     if verboso:
         print("\n--- Iniciando Processo de Identificação ---")
         print(f"A comparar com deslocamento medido de {u_ph_medido * 1000:.4f} mm...")
@@ -84,9 +101,9 @@ def identificar_material(L, t, u_ph_medido, verboso=False):
 
 # (As funções com Sympy permanecem iguais)
 def calcular_comprimento_sympy(u_ph, rho, t, E, verboso=False):
-    '''
+    """
     Calcula o comprimento L simbolicamente usando Sympy.
-    '''
+    """
     if verboso:
         print("\n--- Iniciando cálculo simbólico para Comprimento (L) ---")
 
@@ -95,7 +112,8 @@ def calcular_comprimento_sympy(u_ph, rho, t, E, verboso=False):
     I = calcular_momento_inercia(t, verboso)
     E_pa = E * 1e9
     eq = sympy.Eq(
-        u_ph, (rho * g_val * A * L_sym**3 * (3 * L_sym + 4 * l_val)) / (24 * E_pa * I)
+        u_ph,
+        (rho * g_val * A * L_sym**3 * (3 * L_sym + 4 * l_val)) / (24 * E_pa * I),  # type: ignore
     )
     solucoes = sympy.solve(eq, L_sym)
     for sol in solucoes:
@@ -105,13 +123,13 @@ def calcular_comprimento_sympy(u_ph, rho, t, E, verboso=False):
 
 
 def calcular_espessura_sympy(u_ph, rho, L, E, verboso=False):
-    ''' Calcula a espessura t simbolicamente usando Sympy.'''
+    """Calcula a espessura t simbolicamente usando Sympy."""
     if verboso:
         print("\n--- Iniciando cálculo simbólico para Espessura (t) ---")
     t_sym = sympy.Symbol("t", real=True, positive=True)
     E_pa = E * 1e9
-    A_sym = (sympy.pi / 4) * (D_val**2 - (D_val - 2 * t_sym) ** 2)
-    I_sym = (sympy.pi / 64) * (D_val**4 - (D_val - 2 * t_sym) ** 4)
+    A_sym = (sympy.pi / 4) * (D_val**2 - (D_val - 2 * t_sym) ** 2)  # type: ignore
+    I_sym = (sympy.pi / 64) * (D_val**4 - (D_val - 2 * t_sym) ** 4)  # type: ignore
     eq = sympy.Eq(
         u_ph, (rho * g_val * A_sym * L**3 * (3 * L + 4 * l_val)) / (24 * E_pa * I_sym)
     )
@@ -138,7 +156,7 @@ def calcular_espessura_sympy(u_ph, rho, L, E, verboso=False):
 #     print(f"Comprimento (L): {u_ph_calculado * 1000:.4f} mm")
 #     print(f"Comprimento (L): {u_ph_calculado * 1000000:.2f} µm")
 #     t2 = time()
-    
+
 #     print(f"\nTempo de execução: {(t2 - t1) * 1000:.6f} milisegundos")
 #     t1 = time()
 #     material_identificado, diferenca = identificar_material(L_exemplo, t_exemplo, u_ph_calculado, verboso=True)

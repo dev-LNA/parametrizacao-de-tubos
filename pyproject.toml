@@ -9,5 +9,6 @@ dependencies = [
     "pandas>=3.0.3",
     "pillow>=12.2.0",
     "pydantic>=2.13.4",
+    "pyinstaller>=6.21.0",
     "sympy>=1.14.0",
 ]

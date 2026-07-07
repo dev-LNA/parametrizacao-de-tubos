@@ -7,7 +7,7 @@ import pandas as pd
 import sympy
 from pydantic import PositiveFloat, validate_call
 
-from src.utils import ARQUIVO_CSV, D_val, gravidade, l_val
+from src.utils import ARQUIVO_CSV, D_val, gravidade, l_val, obter_caminho_recurso
 
 
 @validate_call
@@ -72,7 +72,8 @@ def identificar_material(
     melhor_material = None
     menor_diferenca = float("inf")
 
-    materiais = pd.read_csv(ARQUIVO_CSV)
+    caminho_arquivo_csv = obter_caminho_recurso() / ARQUIVO_CSV
+    materiais = pd.read_csv(caminho_arquivo_csv)
 
     for _, linha in materiais.iterrows():
         densidade = linha["densidade"]
@@ -160,9 +161,33 @@ def calcular_espessura_sympy(
         / (24 * modulo_elasticidade_pa * momento_inercia_sym),
     )
 
-    sol = sympy.solve(eq, t_sym, 0.001)
-    # if sol.is_real and 0 < sol < D_val / 2:
-    return float(sol)
+    try:
+        sol = sympy.nsolve(eq, t_sym, 0.001)
+        if sol.is_real and 0 < sol < D_val / 2:
+            return float(sol)
+    except Exception:
+        pass
+    return None
+
+
+def calcular_espessura_sympy_1(u_ph, rho, L, E, verboso=False):
+    """Calcula a espessura t simbolicamente usando Sympy."""
+    if verboso:
+        print("\n--- Iniciando cálculo simbólico para Espessura (t) ---")
+    t_sym = sympy.Symbol("t", real=True, positive=True)
+    E_pa = E * 1e9
+    A_sym = (sympy.pi / 4) * (D_val**2 - (D_val - 2 * t_sym) ** 2)  # type: ignore
+    I_sym = (sympy.pi / 64) * (D_val**4 - (D_val - 2 * t_sym) ** 4)  # type: ignore
+    eq = sympy.Eq(
+        u_ph, (rho * 1 * A_sym * L**3 * (3 * L + 4 * l_val)) / (24 * E_pa * I_sym)
+    )
+    try:
+        sol = sympy.nsolve(eq, t_sym, 0.001)
+        if sol.is_real and 0 < sol < D_val / 2:
+            return float(sol)
+    except Exception:
+        pass
+    return None
 
 
 # --- Exemplo de Uso ---
@@ -170,7 +195,8 @@ def main():
     t1 = time()
     # Exemplo de uso das funções
 
-    materiais = pd.read_csv(ARQUIVO_CSV)
+    caminho_arquivo_csv = obter_caminho_recurso() / ARQUIVO_CSV
+    materiais = pd.read_csv(caminho_arquivo_csv)
     material = materiais[materiais["apelido"] == "aluminio_6061_t6"]
 
     rho_exemplo = material["densidade"].values[0]
