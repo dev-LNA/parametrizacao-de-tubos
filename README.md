@@ -1,5 +1,5 @@
 # Parametrização de tubos
 
-Este software foi desenvolvido para a realização do cálculo de diversos parâmetros dimensionais relacionados à confecção de tubos metálicos, que são o deslocamento, espessura e comprimento. Além disso, este software também é capaz de fornecer o tipo material mais apropriado para confecção, dado alguns parâmetros dimensionais da peça.
+O software Parametrização de Tubos foi desenvolvido para o cálculo de parâmetros dimensionais de tubos metálicos fabricados em aço e alumínio. Os valores determinados por este software servem como uma estimativa inicial para os parâmetros de entrada necessários durante simualações mecânicas realizadas para este tipo de peça.
 
 ![gui](docs/gui.png)
