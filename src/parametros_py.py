@@ -141,7 +141,7 @@ def calcular_espessura_sympy(
     comprimento: PositiveFloat,
     modulo_elasticidade: PositiveFloat,
     verboso=False,
-):
+) -> float:
     """Calcula a espessura t simbolicamente usando Sympy."""
     if verboso:
         print("\n--- Iniciando cálculo simbólico para Espessura ---")
@@ -163,11 +163,22 @@ def calcular_espessura_sympy(
 
     try:
         sol = sympy.nsolve(eq, t_sym, 0.001)
-        if sol.is_real and 0 < sol < D_val / 2:
-            return float(sol)
     except Exception:
-        pass
-    return None
+        raise ValueError(
+            "Solução não encontrada. Tente um valor de deslocamento menor."
+        )
+    if not sol.is_real:
+        raise ValueError("Não existe uma solução real.")
+    sol = float(sol)
+    if sol < 0:
+        raise ValueError(
+            f"A solução encontrada foi um valor negativo: {sol * 1e3:.3f} mm"
+        )
+    if sol >= D_val / 2:
+        raise ValueError(
+            f"Espessura maior ou igual ao raio do tubo: {sol * 1e3:.3f} mm"
+        )
+    return sol
 
 
 def calcular_espessura_sympy_1(u_ph, rho, L, E, verboso=False):

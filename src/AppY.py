@@ -1,6 +1,5 @@
 import os
 import webbrowser
-from pathlib import Path
 
 import customtkinter as ctk
 import pandas as pd
