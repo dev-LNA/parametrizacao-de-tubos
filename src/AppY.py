@@ -1,5 +1,6 @@
 import os
 import webbrowser
+from typing import Any
 
 import customtkinter as ctk
 import pandas as pd
@@ -15,7 +16,7 @@ from src.utils import ARQUIVO_CSV, ICON_PATH, LINK_URL, LOGO_PATH, obter_caminho
 
 
 class App(ctk.CTk):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.title("Parametrização de Tubos")
@@ -56,7 +57,7 @@ class App(ctk.CTk):
         # --- Rodapé ---
         self.create_footer()
 
-    def create_header(self):
+    def create_header(self) -> None:
         # --- Configura ícone da janela (canto superior esquerdo) ---
         if os.path.exists(ICON_PATH):
             try:
@@ -106,7 +107,7 @@ class App(ctk.CTk):
         )
         self.title_label.pack(side="left")
 
-    def create_footer(self):
+    def create_footer(self) -> None:
         """Cria o rodapé com informações e link."""
         self.footer_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.footer_frame.grid(row=2, column=0, padx=20, pady=(0, 5), sticky="ew")
@@ -143,7 +144,7 @@ class App(ctk.CTk):
         self.footer_label2.pack(side="left")
         self.footer_label.pack(side="left")
 
-    def create_widgets(self):
+    def create_widgets(self) -> None:
         """Cria a visualização em abas (TabView)."""
         tab_view = ctk.CTkTabview(self, width=500)
         tab_view.grid(row=1, column=0, padx=20, pady=(10, 0), sticky="nsew")
@@ -168,7 +169,9 @@ class App(ctk.CTk):
 
     # --- Funções Auxiliares de UI ---
 
-    def _create_input_row(self, parent, label_text, row, placeholder_text=None):
+    def _create_input_row(
+        self, parent, label_text, row, placeholder_text=None
+    ) -> ctk.CTkEntry:
         """
         Cria uma linha de Label + Entry com placeholder opcional.
         """
@@ -180,7 +183,7 @@ class App(ctk.CTk):
         entry.grid(row=row, column=1, padx=10, pady=10, sticky="e")
         return entry
 
-    def _create_material_dropdown(self, parent, row):
+    def _create_material_dropdown(self, parent, row) -> ctk.CTkOptionMenu:
         """Cria o dropdown de materiais."""
         label = ctk.CTkLabel(parent, text="Material:")
         label.grid(row=row, column=0, padx=10, pady=10, sticky="w")
@@ -188,7 +191,7 @@ class App(ctk.CTk):
         dropdown.grid(row=row, column=1, padx=10, pady=10, sticky="e")
         return dropdown
 
-    def _create_result_box(self, parent, row):
+    def _create_result_box(self, parent, row) -> ctk.CTkTextbox:
         """Cria a caixa de texto para resultados."""
         label = ctk.CTkLabel(parent, text="Resultado:", font=ctk.CTkFont(weight="bold"))
         label.grid(row=row, column=0, columnspan=2, padx=10, pady=(20, 5), sticky="w")
@@ -198,7 +201,7 @@ class App(ctk.CTk):
         textbox.grid(row=row + 1, column=0, columnspan=2, padx=10, pady=5, sticky="ew")
         return textbox
 
-    def _update_result_box(self, box, text):
+    def _update_result_box(self, box, text) -> None:
         """Atualiza o conteúdo da caixa de resultado."""
         box.configure(state="normal")
         box.delete("1.0", "end")
@@ -207,7 +210,9 @@ class App(ctk.CTk):
 
     # --- Criação das Abas ---
 
-    def _create_calculator_ui(self, parent_tab, input_config, button_text):
+    def _create_calculator_ui(
+        self, parent_tab, input_config, button_text
+    ) -> dict[Any, Any]:
         """
         Função centralizada para criar a UI de uma aba de calculadora.
 
@@ -286,7 +291,7 @@ class App(ctk.CTk):
         # Retorna todos os widgets para a função 'create_tabX' poder usá-los
         return created_widgets
 
-    def create_tab1(self, tab):
+    def create_tab1(self, tab) -> None:
         """Popula a Aba 1: Calcular Deslocamento"""
         # 1. Defina os inputs que esta aba precisa
         inputs = {
@@ -305,7 +310,7 @@ class App(ctk.CTk):
             )
         )
 
-    def create_tab2(self, tab):
+    def create_tab2(self, tab) -> None:
         """Popula a Aba 2: Calcular Espessura (t)"""
         inputs = {
             "material": None,
@@ -324,7 +329,7 @@ class App(ctk.CTk):
             )
         )
 
-    def create_tab3(self, tab):
+    def create_tab3(self, tab) -> None:
         """Popula a Aba 3: Identificar Material"""
         inputs = {
             # Note: Sem "material" aqui!
@@ -344,7 +349,7 @@ class App(ctk.CTk):
             )
         )
 
-    def create_tab4(self, tab):
+    def create_tab4(self, tab) -> None:
         """Popula a Aba 4: Calcular Comprimento"""
         inputs = {
             "material": None,
@@ -363,7 +368,7 @@ class App(ctk.CTk):
             )
         )
 
-    def _parse_float(self, text_value):
+    def _parse_float(self, text_value) -> float:
         """
         Converte um texto para float, aceitando '.' ou ',' como decimal.
         Lança um ValueError com uma mensagem clara se falhar.
@@ -379,7 +384,7 @@ class App(ctk.CTk):
             # Lança um erro mais específico para o usuário
             raise ValueError(f"'{text_value}' não é um número válido.")
 
-    def _get_material_props(self, mat_escolha):
+    def _get_material_props(self, mat_escolha) -> dict[Any, Any]:
         """
         Encontra e retorna o dicionário de propriedades do material.
         Lança um Exception se não encontrar.
@@ -401,7 +406,9 @@ class App(ctk.CTk):
 
     # --- Funções de Callback (Lógica da UI) ---
 
-    def on_calc_deslocamento(self, mat_escolha, L_str, espessura_str, result_box):
+    def on_calc_deslocamento(
+        self, mat_escolha, L_str, espessura_str, result_box
+    ) -> None:
         try:
             # 1. Validação e Conversão
             comprimento = self._parse_float(L_str)
@@ -504,7 +511,7 @@ class App(ctk.CTk):
 
     def on_calc_espessura(
         self, mat_escolha, L_str, deslocamento_pinhole_str, result_box
-    ):
+    ) -> None:
         try:
             comprimento = self._parse_float(L_str)
             deslocamento_pinhole_mm = self._parse_float(deslocamento_pinhole_str)

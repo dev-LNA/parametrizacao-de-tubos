@@ -2,8 +2,6 @@ import os
 import sys
 from pathlib import Path
 
-from pydantic import BaseModel, PositiveFloat
-
 # --- Parâmetros Fixos ---
 gravidade = 9.81
 l_val = 100 / 1000
