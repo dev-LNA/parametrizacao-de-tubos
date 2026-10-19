@@ -6,6 +6,7 @@ import customtkinter as ctk
 import pandas as pd
 from PIL import Image, ImageTk
 
+import data_types as dt
 from src.parametros_py import (
     calcular_comprimento_sympy,
     calcular_deslocamento,
@@ -384,7 +385,7 @@ class App(ctk.CTk):
             # Lança um erro mais específico para o usuário
             raise ValueError(f"'{text_value}' não é um número válido.")
 
-    def _get_material_props(self, mat_escolha) -> dict[Any, Any]:
+    def _get_material_props(self, mat_escolha) -> dt.Material:
         """
         Encontra e retorna o dicionário de propriedades do material.
         Lança um Exception se não encontrar.
@@ -394,11 +395,16 @@ class App(ctk.CTk):
 
         if mat_escolha not in materiais["nome"].to_list():
             # Se o loop terminar sem encontrar, lança um erro
-            raise Exception(
+            raise ValueError(
                 f"Material '{mat_escolha}' não foi encontrado no banco de dados."
             )
 
         material = materiais[materiais["nome"] == mat_escolha]
+        return dt.Material(
+            densidade=material["densidade"].values[0],
+            modulo_elasticidade=material["modulo_elasticidade"].values[0] * 1e9,
+            nome=material["nome"].values[0],
+        )
         return {col: material[col].values[0] for col in material.columns}
         # for key, value in materiais.items():
         #     if value["nome"] == mat_escolha:
@@ -410,30 +416,19 @@ class App(ctk.CTk):
         self, mat_escolha, L_str, espessura_str, result_box
     ) -> None:
         try:
-            # 1. Validação e Conversão
-            comprimento = self._parse_float(L_str)
-            t_mm = self._parse_float(espessura_str)
-            espessura = t_mm / 1000  # Converte mm para m
-
-            # 2. Busca de Material
-            props = self._get_material_props(mat_escolha)
-            rho = props["densidade"]
-            modulo_elasticidade = props["modulo_elasticidade"]
-
-            # 3. Cálculo
-            resultado_m = calcular_deslocamento(
-                rho, comprimento, espessura, modulo_elasticidade
+            tubo = dt.Tubo(
+                diametro=0.1,
+                espessura=self._parse_float(espessura_str) / 1e3,
+                comprimento=self._parse_float(L_str),
             )
 
-            # 4. Formatação de Saída (SIMPLES)
-            output = (
-                f"Deslocamento: {resultado_m * 1000:.4f} mm\n"
-                f"Deslocamento: {resultado_m * 1000000:.2f} µm"
-            )
+            material = self._get_material_props(mat_escolha)
+            resultado_m = calcular_deslocamento(tubo, material)
+
+            output = f"Deslocamento: {resultado_m:.2e} m\n"
             self._update_result_box(result_box, output)
 
-        except Exception as e:
-            # 5. Tratamento de Erro
+        except ValueError as e:
             erro_msg = f"ERRO NA ENTRADA\n--------------------\n{e}"
             self._update_result_box(result_box, erro_msg)
 
@@ -477,35 +472,27 @@ class App(ctk.CTk):
 
     def on_calc_comprimento(
         self, mat_escolha, espessura_str, deslocamento_pinhole_str, result_box
-    ):
+    ) -> None:
         try:
-            t_mm = self._parse_float(espessura_str)
             deslocamento_pinhole_mm = self._parse_float(deslocamento_pinhole_str)
 
-            espessura = t_mm / 1000  # mm para m
-            deslocamento_pinhole = deslocamento_pinhole_mm / 1000  # mm para m
+            tubo = dt.Tubo(
+                diametro=0.1,
+                espessura=self._parse_float(espessura_str) / 1e3,
+            )
 
-            props = self._get_material_props(mat_escolha)
-            rho = props["densidade"]
-            modulo_elasticidade = props["modulo_elasticidade"]
+            deslocamento_pinhole = deslocamento_pinhole_mm / 1e3  # mm para m
+
+            material = self._get_material_props(mat_escolha)
 
             resultado_m = calcular_comprimento_sympy(
-                deslocamento_pinhole, rho, espessura, modulo_elasticidade
+                deslocamento_pinhole, tubo, material
             )
 
-            if resultado_m is None:
-                raise Exception(
-                    "Não foi possível encontrar uma solução real e positiva."
-                )
-
-            # 4. Formatação de Saída (SIMPLES)
-            output = (
-                f"Comprimento: {resultado_m:.6f} m\n"
-                f"Comprimento: {resultado_m * 1000:.4f} mm"
-            )
+            output = f"Comprimento: {resultado_m:.2e} m"
             self._update_result_box(result_box, output)
 
-        except Exception as e:
+        except ValueError as e:
             erro_msg = f"ERRO NA ENTRADA OU CÁLCULO\n--------------------\n{e}"
             self._update_result_box(result_box, erro_msg)
 

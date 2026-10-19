@@ -5,48 +5,50 @@ from typing import Any
 import pandas as pd
 import sympy
 from pydantic import PositiveFloat, validate_call
+from scipy.constants import g as gravidade
 
-from src.utils import ARQUIVO_CSV, D_val, gravidade, l_val, obter_caminho_recurso
+from src import data_types as dt
+from src.utils import ARQUIVO_CSV, obter_caminho_recurso
 
 
 @validate_call
-def calcular_area(espessura, verboso=False) -> float:
+def calcular_area(diametro: float, espessura: float) -> float:
     """Calcula a área A do tubo com base na espessura t."""
-    return (math.pi / 4.0) * (D_val**2 - (D_val - 2 * espessura) ** 2)
+
+    return (math.pi / 4.0) * (diametro**2 - (diametro - 2 * espessura) ** 2)
 
 
 @validate_call
-def calcular_momento_inercia(espessura: PositiveFloat, verboso=False) -> float:
+def calcular_momento_inercia(diametro: float, espessura: float) -> float:
     """Calcula o momento de inércia I do tubo com base na espessura t."""
-    return (math.pi / 64.0) * (D_val**4 - (D_val - 2 * espessura) ** 4)
+    return (math.pi / 64.0) * (diametro**4 - (diametro - 2 * espessura) ** 4)
 
 
 @validate_call
 def calcular_deslocamento(
-    densidade: PositiveFloat,
-    comprimento: PositiveFloat,
-    espessura: PositiveFloat,
-    modulo_elasticidade: PositiveFloat,
+    tubo: dt.Tubo,
+    material: dt.Material,
     verboso=False,
 ) -> float:
     """Calcula o deslocamento do tubo com base nos parâmetros fornecidos."""
-    area = calcular_area(espessura, verboso)
-    momento_inercia = calcular_momento_inercia(espessura, verboso)
-    modulo_elasticidade_pa = modulo_elasticidade * 1e9
+    area = calcular_area(tubo.diametro, tubo.espessura)
+    momento_inercia = calcular_momento_inercia(tubo.diametro, tubo.espessura)
+
+    numerador = (
+        material.densidade
+        * gravidade
+        * area
+        * tubo.comprimento**3
+        * (3 * tubo.comprimento + 4 * tubo.l_val)
+    )
+    denominador = 24 * material.modulo_elasticidade * momento_inercia
+    deslocamento_pinhole = numerador / denominador
 
     if verboso:
         print("\n--- Etapas do Cálculo de Deslocamento ---")
         print(f"Área (A): {area:.12e} m^2")
         print(f"Momento de Inércia: {momento_inercia:.12e} m^4")
-        print(f"Módulo de Elasticidade: {modulo_elasticidade_pa:.12e} Pa")
-
-    numerador = (
-        densidade * gravidade * area * comprimento**3 * (3 * comprimento + 4 * l_val)
-    )
-    denominador = 24 * modulo_elasticidade_pa * momento_inercia
-    deslocamento_pinhole = numerador / denominador
-
-    if verboso:
+        print(f"Módulo de Elasticidade: {material.modulo_elasticidade:.3e} Pa")
         print(f"Numerador da equação: {numerador:.6e}")
         print(f"Denominador da equação: {denominador:.6e}")
 
@@ -100,11 +102,10 @@ def identificar_material(
 @validate_call
 def calcular_comprimento_sympy(
     deslocamento_pinhole: PositiveFloat,
-    densidade: PositiveFloat,
-    espessura: PositiveFloat,
-    modulo_elasticidade: PositiveFloat,
+    tubo: dt.Tubo,
+    material: dt.Material,
     verboso=False,
-) -> float | None:
+) -> float:
     """
     Calcula o comprimento simbolicamente usando Sympy.
     """
@@ -112,25 +113,24 @@ def calcular_comprimento_sympy(
         print("\n--- Iniciando cálculo simbólico para Comprimento (L) ---")
 
     comprimento_sym = sympy.Symbol("L", real=True, positive=True)
-    area = calcular_area(espessura, verboso)
-    momento_inercia = calcular_momento_inercia(espessura, verboso)
-    modulo_elasticidade_pa = modulo_elasticidade * 1e9
+    area = calcular_area(tubo.diametro, tubo.espessura)
+    momento_inercia = calcular_momento_inercia(tubo.diametro, tubo.espessura)
     eq = sympy.Eq(
         deslocamento_pinhole,
         (
-            densidade
+            material.densidade
             * gravidade
             * area
             * comprimento_sym**3  # type:ignore
-            * (3 * comprimento_sym + 4 * l_val)  # type:ignore
+            * (3 * comprimento_sym + 4 * tubo.l_val)  # type:ignore
         )
-        / (24 * modulo_elasticidade_pa * momento_inercia),
+        / (24 * material.modulo_elasticidade * momento_inercia),
     )
     solucoes = sympy.solve(eq, comprimento_sym)
     for sol in solucoes:
         if sol.is_real and sol > 0:
             return float(sol)
-    return None
+    raise ValueError(f"A solução encontrada não é real e positiva: {sol!s}")
 
 
 @validate_call
@@ -174,26 +174,6 @@ def calcular_espessura_sympy(
     if sol >= D_val / 2:
         raise ValueError(f"Espessura maior ou igual ao raio do tubo: {sol * 1e3:.3f} mm")
     return sol
-
-
-def calcular_espessura_sympy_1(u_ph, rho, L, E, verboso=False) -> float | None:
-    """Calcula a espessura t simbolicamente usando Sympy."""
-    if verboso:
-        print("\n--- Iniciando cálculo simbólico para Espessura (t) ---")
-    t_sym = sympy.Symbol("t", real=True, positive=True)
-    E_pa = E * 1e9
-    A_sym = (sympy.pi / 4) * (D_val**2 - (D_val - 2 * t_sym) ** 2)  # type: ignore
-    I_sym = (sympy.pi / 64) * (D_val**4 - (D_val - 2 * t_sym) ** 4)  # type: ignore
-    eq = sympy.Eq(
-        u_ph, (rho * 1 * A_sym * L**3 * (3 * L + 4 * l_val)) / (24 * E_pa * I_sym)
-    )
-    try:
-        sol = sympy.nsolve(eq, t_sym, 0.001)
-        if sol.is_real and 0 < sol < D_val / 2:
-            return float(sol)
-    except Exception:
-        pass
-    return None
 
 
 # --- Exemplo de Uso ---
