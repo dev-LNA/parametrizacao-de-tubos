@@ -1,6 +1,6 @@
 import os
 import webbrowser
-from typing import Any
+from typing import Any, Literal
 
 import customtkinter as ctk
 import pandas as pd
@@ -303,11 +303,14 @@ class App(ctk.CTk):
 
         # 2. Crie a UI
         ui = self._create_calculator_ui(tab, inputs, "Calcular Deslocamento")
+        mat_escolha = dt.Materiais_Cadastrados(ui["material"].get())
+        comprimento = self._parse_float(ui["L"].get())
+        espessura = self._parse_float(ui["t"].get())
 
         # 3. Conecte o botão (a única parte única desta aba)
         ui["button"].configure(
             command=lambda: self.on_calc_deslocamento(
-                ui["material"].get(), ui["L"].get(), ui["t"].get(), ui["result_box"]
+                mat_escolha, comprimento, espessura, ui["result_box"]
             )
         )
 
@@ -320,12 +323,15 @@ class App(ctk.CTk):
         }
 
         ui = self._create_calculator_ui(tab, inputs, "Calcular Espessura")
+        mat_escolha = dt.Materiais_Cadastrados(ui["material"].get())
+        comprimento = self._parse_float(ui["L"].get())
+        deslocamento = (ui["deslocamento_pinhole"].get(),)
 
         ui["button"].configure(
             command=lambda: self.on_calc_espessura(
-                ui["material"].get(),
-                ui["L"].get(),
-                ui["deslocamento_pinhole"].get(),
+                mat_escolha,
+                comprimento,
+                deslocamento,
                 ui["result_box"],
             )
         )
@@ -385,7 +391,7 @@ class App(ctk.CTk):
             # Lança um erro mais específico para o usuário
             raise ValueError(f"'{text_value}' não é um número válido.")
 
-    def _get_material_props(self, mat_escolha) -> dt.Material:
+    def _get_material_props(self, mat_escolha: dt.Materiais_Cadastrados) -> dt.Material:
         """
         Encontra e retorna o dicionário de propriedades do material.
         Lança um Exception se não encontrar.
@@ -401,25 +407,26 @@ class App(ctk.CTk):
 
         material = materiais[materiais["nome"] == mat_escolha]
         return dt.Material(
-            densidade=material["densidade"].values[0],
-            modulo_elasticidade=material["modulo_elasticidade"].values[0] * 1e9,
-            nome=material["nome"].values[0],
+            densidade=material["densidade"].to_numpy(dtype=float)[0],
+            modulo_elasticidade=material["modulo_elasticidade"].to_numpy(dtype=float)[0]
+            * 1e9,
+            nome=material["nome"].to_numpy(dtype=str)[0],
         )
-        return {col: material[col].values[0] for col in material.columns}
-        # for key, value in materiais.items():
-        #     if value["nome"] == mat_escolha:
-        #         return value  # Retorna o dicionário de propriedades (ex: props["densidade"])
 
     # --- Funções de Callback (Lógica da UI) ---
 
     def on_calc_deslocamento(
-        self, mat_escolha, L_str, espessura_str, result_box
+        self,
+        mat_escolha: dt.Materiais_Cadastrados,
+        comprimento: float,
+        espessura: float,
+        result_box,
     ) -> None:
         try:
             tubo = dt.Tubo(
                 diametro=0.1,
-                espessura=self._parse_float(espessura_str) / 1e3,
-                comprimento=self._parse_float(L_str),
+                espessura=espessura,
+                comprimento=comprimento,
             )
 
             material = self._get_material_props(mat_escolha)
@@ -433,62 +440,53 @@ class App(ctk.CTk):
             self._update_result_box(result_box, erro_msg)
 
     def on_calc_identificar(
-        self, L_str, espessura_str, deslocamento_pinhole_str, result_box
-    ):
+        self,
+        comprimento: float,
+        espessura: float,
+        deslocamento_pinhole: float,
+        result_box,
+    ) -> None:
         try:
-            comprimento = self._parse_float(L_str)
-            t_mm = self._parse_float(espessura_str)
-            deslocamento_pinhole_mm = self._parse_float(deslocamento_pinhole_str)
-
-            espessura = t_mm / 1000  # mm para m
-            deslocamento_pinhole_medido = deslocamento_pinhole_mm / 1000  # mm para m
-
-            if deslocamento_pinhole_medido == 0:
-                raise Exception("Deslocamento medido não pode ser zero.")
-
-            material_identificado, diferenca = identificar_material(
-                comprimento, espessura, deslocamento_pinhole_medido
+            tubo = dt.Tubo(
+                comprimento=comprimento,
+                espessura=espessura,
+                diametro=0.1,
             )
 
-            if material_identificado is None:
-                raise Exception(
-                    "Não foi possível identificar o material (cálculo inválido)."
-                )
+            material_identificado, diferenca = identificar_material(
+                tubo, deslocamento_pinhole
+            )
 
-            erro_percentual = (diferenca / deslocamento_pinhole_medido) * 100
+            erro_percentual = (diferenca / deslocamento_pinhole) * 100
 
-            # 4. Formatação de Saída (SIMPLES)
             output = (
                 f"O material mais provável é: '{material_identificado}'\n\n"
                 f"Detalhes da Análise:\n"
-                f"  Diferença absoluta: {diferenca * 1000:.4f} mm\n"
+                f"  Diferença absoluta: {diferenca:.2e} m\n"
                 f"  Erro percentual: {erro_percentual:.2f}%"
             )
             self._update_result_box(result_box, output)
 
-        except Exception as e:
+        except (ValueError, RuntimeError) as e:
             erro_msg = f"ERRO NA ENTRADA OU CÁLCULO\n--------------------\n{e}"
             self._update_result_box(result_box, erro_msg)
 
     def on_calc_comprimento(
-        self, mat_escolha, espessura_str, deslocamento_pinhole_str, result_box
+        self,
+        mat_escolha: dt.Materiais_Cadastrados,
+        espessura: float,
+        deslocamento_pinhole: float,
+        result_box,
     ) -> None:
         try:
-            deslocamento_pinhole_mm = self._parse_float(deslocamento_pinhole_str)
-
             tubo = dt.Tubo(
                 diametro=0.1,
-                espessura=self._parse_float(espessura_str) / 1e3,
+                espessura=espessura,
             )
-
-            deslocamento_pinhole = deslocamento_pinhole_mm / 1e3  # mm para m
-
             material = self._get_material_props(mat_escolha)
-
             resultado_m = calcular_comprimento_sympy(
                 deslocamento_pinhole, tubo, material
             )
-
             output = f"Comprimento: {resultado_m:.2e} m"
             self._update_result_box(result_box, output)
 
@@ -497,31 +495,23 @@ class App(ctk.CTk):
             self._update_result_box(result_box, erro_msg)
 
     def on_calc_espessura(
-        self, mat_escolha, L_str, deslocamento_pinhole_str, result_box
+        self,
+        mat_escolha: dt.Materiais_Cadastrados,
+        comprimento: float,
+        deslocamento_pinhole: float,
+        result_box,
     ) -> None:
         try:
-            comprimento = self._parse_float(L_str)
-            deslocamento_pinhole_mm = self._parse_float(deslocamento_pinhole_str)
-
-            deslocamento_pinhole = deslocamento_pinhole_mm / 1000  # mm para m
-
-            props = self._get_material_props(mat_escolha)
-            rho = props["densidade"]
-            modulo_elasticidade = props["modulo_elasticidade"]
-
-            resultado_m = calcular_espessura_sympy(
-                deslocamento_pinhole, rho, comprimento, modulo_elasticidade
+            tubo = dt.Tubo(
+                diametro=0.1,
+                comprimento=self._parse_float(comprimento),
             )
+            material = self._get_material_props(mat_escolha)
+            resultado_m = calcular_espessura_sympy(deslocamento_pinhole, tubo, material)
 
-            if resultado_m is None:
-                raise Exception(
-                    "Não foi possível encontrar uma solução real e positiva."
-                )
-
-            # 4. Formatação de Saída (SIMPLES)
-            output = f"Espessura da Parede (t): {resultado_m * 1000:.4f} mm"
+            output = f"Espessura da Parede (t): {resultado_m:.2e} m"
             self._update_result_box(result_box, output)
 
-        except Exception as e:
+        except ValueError as e:
             erro_msg = f"ERRO NA ENTRADA OU CÁLCULO\n--------------------\n{e}"
             self._update_result_box(result_box, erro_msg)

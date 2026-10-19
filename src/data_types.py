@@ -1,25 +1,28 @@
-from typing import Literal, Self
+from enum import StrEnum
+from typing import Self
 
 from pydantic import BaseModel, Field, model_validator
+
+
+class Materiais_Cadastrados(StrEnum):
+    AL_6061_0 = "Al 6061-O"
+    AL_6061_T6 = "Al 6061-T6"
+    AL_5052_H32 = "Al 5052-H32"
+    INOX_304 = "Inox 304"
+    INOX_316 = "Inox 316"
+    INOX_430 = "Inox 430"
+    AÇO_1045 = "Aço 1045"
 
 
 class Material(BaseModel):
     densidade: float = Field(gt=0)
     modulo_elasticidade: float = Field(gt=0)
-    nome: Literal[
-        "Al 6061-O",
-        "Al 6061-T6",
-        "Al 5052-H32",
-        "Inox 304",
-        "Inox 316",
-        "Inox 430",
-        "Aço 1045",
-    ]
+    nome: Materiais_Cadastrados
 
 
 class Tubo(BaseModel):
     diametro: float = Field(gt=0)
-    espessura: float = Field(gt=0)
+    espessura: float = Field(gt=0, default=0)
     comprimento: float = Field(gt=0, default=0)
     l_val: float = 0.1
 
@@ -30,3 +33,6 @@ class Tubo(BaseModel):
                 f"A espessura deve ser menor do que {self.diametro / 2}: {self.espessura}"
             )
         return self
+
+    def espessura_valida(self, espessura: float) -> bool:
+        return not (espessura <= 0 or espessura > self.diametro / 2)

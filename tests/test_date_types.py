@@ -12,5 +12,11 @@ class Test_Data_types:
         with pytest.raises(ValueError):
             dt.Tubo(diametro=1, espessura=0.6, comprimento=1)
 
+    def test_espessura_valida(self) -> None:
+        tubo = dt.Tubo(diametro=0.1, espessura=1e-3, comprimento=1)
+        assert not tubo.espessura_valida(0)
+        assert not tubo.espessura_valida(1)
+        assert tubo.espessura_valida(0.05)
+
     def test_material(self) -> None:
         dt.Material(densidade=0.1, modulo_elasticidade=68.9, nome="Al 5052-H32")
