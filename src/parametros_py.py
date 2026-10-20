@@ -3,31 +3,27 @@ from time import time
 
 import pandas as pd
 import sympy
-from pydantic import PositiveFloat, validate_call
 from scipy.constants import g as gravidade
 
 from src import data_types as dt
 from src.utils import ARQUIVO_CSV, obter_caminho_recurso
 
 
-@validate_call
 def calcular_area(diametro: float, espessura: float) -> float:
     """Calcula a área A do tubo com base na espessura t."""
 
     return (math.pi / 4.0) * (diametro**2 - (diametro - 2 * espessura) ** 2)
 
 
-@validate_call
 def calcular_momento_inercia(diametro: float, espessura: float) -> float:
     """Calcula o momento de inércia I do tubo com base na espessura t."""
     return (math.pi / 64.0) * (diametro**4 - (diametro - 2 * espessura) ** 4)
 
 
-@validate_call
 def calcular_deslocamento(
     tubo: dt.Tubo,
     material: dt.Material,
-) -> float:
+) -> dt.Positive_Float:
     """Calcula o deslocamento do tubo com base nos parâmetros fornecidos."""
     area = calcular_area(tubo.diametro, tubo.espessura)
     momento_inercia = calcular_momento_inercia(tubo.diametro, tubo.espessura)
@@ -40,15 +36,14 @@ def calcular_deslocamento(
         * (3 * tubo.comprimento + 4 * tubo.l_val)
     )
     denominador = 24 * material.modulo_elasticidade * momento_inercia
-    deslocamento_pinhole = numerador / denominador
+    deslocamento_pinhole = dt.Positive_Float(numerador / denominador)
 
     return deslocamento_pinhole
 
 
-@validate_call
 def identificar_material(
     tubo: dt.Tubo,
-    deslocamento_medido: PositiveFloat,
+    deslocamento_medido: dt.Positive_Float,
 ) -> tuple[str, float]:
     """Compara o deslocamento medido com o deslocamento teórico de cada material."""
 
@@ -61,7 +56,7 @@ def identificar_material(
     for _, linha in materiais.iterrows():
         material = dt.Material(
             densidade=linha["densidade"],
-            modulo_elasticidade=linha["modulo_elasticidade"],
+            modulo_elasticidade=linha["modulo_elasticidade"] * 1e9,
             nome=linha["nome"],
         )
 
@@ -80,13 +75,12 @@ def identificar_material(
     return melhor_material, menor_diferenca
 
 
-@validate_call
 def calcular_comprimento_sympy(
-    deslocamento_pinhole: PositiveFloat,
+    deslocamento_pinhole: dt.Positive_Float,
     tubo: dt.Tubo,
     material: dt.Material,
     verboso=False,
-) -> float:
+) -> dt.Positive_Float:
     """
     Calcula o comprimento simbolicamente usando Sympy.
     """
@@ -110,16 +104,15 @@ def calcular_comprimento_sympy(
     solucoes = sympy.solve(eq, comprimento_sym)
     for sol in solucoes:
         if sol.is_real and sol > 0:
-            return float(sol)
+            return dt.Positive_Float(sol)
     raise ValueError(f"A solução encontrada não é real e positiva: {sol!s}")
 
 
-@validate_call
 def calcular_espessura_sympy(
-    deslocamento_pinhole: PositiveFloat,
+    deslocamento_pinhole: dt.Positive_Float,
     tubo: dt.Tubo,
     material: dt.Material,
-) -> float:
+) -> dt.Positive_Float:
     """Calcula a espessura t simbolicamente usando Sympy."""
     t_sym = sympy.Symbol("t", real=True, positive=True)
     area_sym = (sympy.pi / 4) * (tubo.diametro**2 - (tubo.diametro - 2 * t_sym) ** 2)  # type:ignore
@@ -147,8 +140,11 @@ def calcular_espessura_sympy(
     if sol < 0:
         raise ValueError(f"A solução encontrada foi um valor negativo: {sol:.2e} m")
     if sol >= tubo.diametro / 2:
-        raise ValueError(f"Espessura maior ou igual ao raio do tubo: {sol:.2e} m")
-    return float(sol)
+        raise ValueError(
+            "Espessura maior ou igual ao raio do tubo. "
+            "Tente um valor de deslocamento maior"
+        )
+    return dt.Positive_Float(sol)
 
 
 # --- Exemplo de Uso ---

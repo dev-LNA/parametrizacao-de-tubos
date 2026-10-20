@@ -1,14 +1,15 @@
-from tubo_parameter import (
-    materiais,
-    calcular_deslocamento,
-    identificar_material,
-    calcular_comprimento_sympy,
-    calcular_espessura_sympy,
-)
-import customtkinter as ctk
-from PIL import Image, ImageTk
 import os
 import webbrowser
+
+import customtkinter as ctk
+from PIL import Image, ImageTk
+from tubo_parameter import (
+    calcular_comprimento_sympy,
+    calcular_deslocamento,
+    calcular_espessura_sympy,
+    identificar_material,
+    materiais,
+)
 
 # =============================================================================
 # --- Define Caminhos de Arquivo ---
@@ -22,12 +23,13 @@ ICON_PATH = os.path.join(BASE_PATH, "logo.ico")  # Para o ícone da janela
 
 LINK_URL = "https://www.linkedin.com/in/eron-pontes-795b32311/"
 
+
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
 
         self.title("Parametrização de Tubos")
-        
+
         self.geometry("550x600")
         # self.minsize(550, 600)
         self.minsize(650, 600)
@@ -39,12 +41,11 @@ class App(ctk.CTk):
         # y_pos = (screen_height // 2) - (start_height // 2)
         # self.geometry(f"{start_width}x{start_height}+{x_pos}+{y_pos}")
 
-
         # Configurações de tema
         ctk.set_appearance_mode("System")
         ctk.set_default_color_theme("blue")
         self.button_color = "#14386e"
-        
+
         self.materiais_list = [materiais[key]["nome"] for key in materiais]
 
         # --- Layout principal (Corrigido para 3 linhas) ---
@@ -61,7 +62,7 @@ class App(ctk.CTk):
 
         # --- Rodapé ---
         self.create_footer()
-        
+
     def create_header(self):
         # --- Configura ícone da janela (canto superior esquerdo) ---
         if os.path.exists(ICON_PATH):
@@ -73,7 +74,9 @@ class App(ctk.CTk):
                     self.icon_photo_image = ImageTk.PhotoImage(pil_icon)
                     self.iconphoto(False, self.icon_photo_image)
                 except Exception as e2:
-                    print(f"Erro ao definir ícone da janela a partir de {ICON_PATH}: {e} / {e2}")                    
+                    print(
+                        f"Erro ao definir ícone da janela a partir de {ICON_PATH}: {e} / {e2}"
+                    )
         else:
             print(f"Aviso: Ícone da janela não encontrado em {ICON_PATH}")
 
@@ -93,27 +96,29 @@ class App(ctk.CTk):
                 print(f"Erro ao carregar LOGO DO CABEÇALHO de {LOGO_PATH}: {e}")
         else:
             print(f"Aviso: Logo do cabeçalho não encontrado em {LOGO_PATH}")
-            
+
         self.header_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.header_frame.grid(row=0, column=0, padx=20, pady=(20, 0), sticky="ew")
 
         if self.logo_image_ctk:
-            self.logo_label = ctk.CTkLabel(self.header_frame, image=self.logo_image_ctk, text="")
+            self.logo_label = ctk.CTkLabel(
+                self.header_frame, image=self.logo_image_ctk, text=""
+            )
             self.logo_label.pack(side="left", padx=(0, 15))
-        
+
         self.title_label = ctk.CTkLabel(
-            self.header_frame, 
+            self.header_frame,
             text="Parametrização de Tubos",
-            font=ctk.CTkFont(size=20, weight="bold")
+            font=ctk.CTkFont(size=20, weight="bold"),
         )
         self.title_label.pack(side="left")
-            
+
     def create_footer(self):
         """Cria o rodapé com informações e link."""
         self.footer_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.footer_frame.grid(row=2, column=0, padx=20, pady=(0, 5), sticky="ew")
 
-        link_url = LINK_URL # substitua pela URL desejada
+        link_url = LINK_URL  # substitua pela URL desejada
 
         # Texto inicial
         self.footer_label = ctk.CTkLabel(
@@ -176,13 +181,9 @@ class App(ctk.CTk):
         """
         label = ctk.CTkLabel(parent, text=label_text)
         label.grid(row=row, column=0, padx=10, pady=10, sticky="w")
-        
-        entry = ctk.CTkEntry(
-            parent, 
-            width=250, 
-            placeholder_text=placeholder_text
-        )
-        
+
+        entry = ctk.CTkEntry(parent, width=250, placeholder_text=placeholder_text)
+
         entry.grid(row=row, column=1, padx=10, pady=10, sticky="e")
         return entry
 
@@ -212,17 +213,17 @@ class App(ctk.CTk):
         box.configure(state="disabled")
 
     # --- Criação das Abas ---
-    
+
     def _create_calculator_ui(self, parent_tab, input_config, button_text):
         """
         Função centralizada para criar a UI de uma aba de calculadora.
-        
+
         Args:
             parent_tab: O widget da aba (tab) onde construir.
             input_config (dict): Um dicionário definindo os inputs.
                 Ex: {"material": None, "L": ("Label (L):", "Placeholder..."), ...}
             button_text (str): O texto para o botão de calcular.
-            
+
         Returns:
             dict: Um dicionário contendo todos os widgets criados ("material", "L", "button", etc.)
         """
@@ -244,12 +245,14 @@ class App(ctk.CTk):
                 # Config é um tuple (label, placeholder)
                 label_text = config[0]
                 placeholder = config[1] if len(config) > 1 else None
-                
-                widget = self._create_input_row(frame, label_text, current_row, placeholder_text=placeholder)
-                
-                created_widgets[key] = widget # Salva o entry (Ex: "L", "t")
-                entries_to_validate.append(widget) # Adiciona à lista para validação
-            
+
+                widget = self._create_input_row(
+                    frame, label_text, current_row, placeholder_text=placeholder
+                )
+
+                created_widgets[key] = widget  # Salva o entry (Ex: "L", "t")
+                entries_to_validate.append(widget)  # Adiciona à lista para validação
+
             current_row += 1
 
         # Cria o Botão (na próxima linha)
@@ -257,7 +260,7 @@ class App(ctk.CTk):
             frame,
             text=button_text,
             fg_color=self.button_color,
-            state="disabled" # Começa desabilitado
+            state="disabled",  # Começa desabilitado
         )
         calc_button.grid(row=current_row, column=0, columnspan=2, padx=10, pady=20)
         created_widgets["button"] = calc_button
@@ -275,7 +278,7 @@ class App(ctk.CTk):
                 if not entry.get():
                     all_filled = False
                     break
-            
+
             if all_filled:
                 calc_button.configure(state="normal")
             else:
@@ -284,48 +287,46 @@ class App(ctk.CTk):
         # Vincula a validação a todos os campos de entrada
         for entry in entries_to_validate:
             entry.bind("<KeyRelease>", validate_fields)
-            
+
         # (O botão já começa desabilitado, então a chamada inicial não é necessária)
 
         # Retorna todos os widgets para a função 'create_tabX' poder usá-los
         return created_widgets
-    
+
     def create_tab1(self, tab):
         """Popula a Aba 1: Calcular Deslocamento (u_ph)"""
         # 1. Defina os inputs que esta aba precisa
         inputs = {
-            "material": None, # O "None" significa "crie o dropdown de material"
+            "material": None,  # O "None" significa "crie o dropdown de material"
             "L": ("Comprimento (L) em metros:", "Ex: 1.5"),
-            "t": ("Espessura (t) em mm:", "Ex: 25.4")
+            "t": ("Espessura (t) em mm:", "Ex: 25.4"),
         }
-        
+
         # 2. Crie a UI
         ui = self._create_calculator_ui(tab, inputs, "Calcular Deslocamento")
-        
+
         # 3. Conecte o botão (a única parte única desta aba)
-        ui["button"].configure(command=lambda: self.on_calc_deslocamento(
-            ui["material"].get(),
-            ui["L"].get(),
-            ui["t"].get(),
-            ui["result_box"]
-        ))
+        ui["button"].configure(
+            command=lambda: self.on_calc_deslocamento(
+                ui["material"].get(), ui["L"].get(), ui["t"].get(), ui["result_box"]
+            )
+        )
 
     def create_tab2(self, tab):
         """Popula a Aba 2: Calcular Espessura (t)"""
         inputs = {
             "material": None,
             "L": ("Comprimento (L) em metros:", "Ex: 1.5"),
-            "u_ph": ("Deslocamento (u_ph) em mm:", "Ex: 0.123")
+            "u_ph": ("Deslocamento (u_ph) em mm:", "Ex: 0.123"),
         }
-        
+
         ui = self._create_calculator_ui(tab, inputs, "Calcular Espessura")
-        
-        ui["button"].configure(command=lambda: self.on_calc_espessura(
-            ui["material"].get(),
-            ui["L"].get(),
-            ui["u_ph"].get(),
-            ui["result_box"]
-        ))
+
+        ui["button"].configure(
+            command=lambda: self.on_calc_espessura(
+                ui["material"].get(), ui["L"].get(), ui["u_ph"].get(), ui["result_box"]
+            )
+        )
 
     def create_tab3(self, tab):
         """Popula a Aba 3: Identificar Material"""
@@ -333,36 +334,33 @@ class App(ctk.CTk):
             # Note: Sem "material" aqui!
             "L": ("Comprimento (L) em metros:", "Ex: 1.5"),
             "t": ("Espessura (t) em mm:", "Ex: 2.4"),
-            "u_ph": ("Deslocamento (u_ph) medido em mm:", "Ex: 0.123")
+            "u_ph": ("Deslocamento (u_ph) medido em mm:", "Ex: 0.123"),
         }
-        
+
         ui = self._create_calculator_ui(tab, inputs, "Identificar Material")
-        
-        ui["button"].configure(command=lambda: self.on_calc_identificar(
-            ui["L"].get(),
-            ui["t"].get(),
-            ui["u_ph"].get(),
-            ui["result_box"]
-        ))
+
+        ui["button"].configure(
+            command=lambda: self.on_calc_identificar(
+                ui["L"].get(), ui["t"].get(), ui["u_ph"].get(), ui["result_box"]
+            )
+        )
 
     def create_tab4(self, tab):
         """Popula a Aba 4: Calcular Comprimento (L)"""
         inputs = {
             "material": None,
             "t": ("Espessura (t) em mm:", "Ex: 25.4"),
-            "u_ph": ("Deslocamento (u_ph) em mm:", "Ex: 0.123")
+            "u_ph": ("Deslocamento (u_ph) em mm:", "Ex: 0.123"),
         }
-        
+
         ui = self._create_calculator_ui(tab, inputs, "Calcular Comprimento")
-        
-        ui["button"].configure(command=lambda: self.on_calc_comprimento(
-            ui["material"].get(),
-            ui["t"].get(),
-            ui["u_ph"].get(),
-            ui["result_box"]
-        ))
-        
-        
+
+        ui["button"].configure(
+            command=lambda: self.on_calc_comprimento(
+                ui["material"].get(), ui["t"].get(), ui["u_ph"].get(), ui["result_box"]
+            )
+        )
+
     def _parse_float(self, text_value):
         """
         Converte um texto para float, aceitando '.' ou ',' como decimal.
@@ -387,12 +385,14 @@ class App(ctk.CTk):
         for key, value in materiais.items():
             if value["nome"] == mat_escolha:
                 return value  # Retorna o dicionário de propriedades (ex: props["densidade"])
-        
+
         # Se o loop terminar sem encontrar, lança um erro
-        raise Exception(f"Material '{mat_escolha}' não foi encontrado no banco de dados.")
-    
+        raise Exception(
+            f"Material '{mat_escolha}' não foi encontrado no banco de dados."
+        )
+
     # --- Funções de Callback (Lógica da UI) ---
-    
+
     def on_calc_deslocamento(self, mat_escolha, L_str, t_str, result_box):
         try:
             # 1. Validação e Conversão
@@ -417,11 +417,7 @@ class App(ctk.CTk):
 
         except (ValueError, Exception) as e:
             # 5. Tratamento de Erro
-            erro_msg = (
-                f"ERRO NA ENTRADA\n"
-                f"--------------------\n"
-                f"{e}"
-            )
+            erro_msg = f"ERRO NA ENTRADA\n--------------------\n{e}"
             self._update_result_box(result_box, erro_msg)
 
     def on_calc_identificar(self, L_str, t_str, u_ph_str, result_box):
@@ -439,7 +435,9 @@ class App(ctk.CTk):
             material_identificado, diferenca = identificar_material(L, t, u_ph_medido)
 
             if material_identificado is None:
-                raise Exception("Não foi possível identificar o material (cálculo inválido).")
+                raise Exception(
+                    "Não foi possível identificar o material (cálculo inválido)."
+                )
 
             erro_percentual = (diferenca / u_ph_medido) * 100
 
@@ -453,18 +451,14 @@ class App(ctk.CTk):
             self._update_result_box(result_box, output)
 
         except (ValueError, Exception) as e:
-            erro_msg = (
-                f"ERRO NA ENTRADA OU CÁLCULO\n"
-                f"--------------------\n"
-                f"{e}"
-            )
+            erro_msg = f"ERRO NA ENTRADA OU CÁLCULO\n--------------------\n{e}"
             self._update_result_box(result_box, erro_msg)
 
     def on_calc_comprimento(self, mat_escolha, t_str, u_ph_str, result_box):
         try:
             t_mm = self._parse_float(t_str)
             u_ph_mm = self._parse_float(u_ph_str)
-            
+
             t = t_mm / 1000  # mm para m
             u_ph = u_ph_mm / 1000  # mm para m
 
@@ -475,7 +469,9 @@ class App(ctk.CTk):
             resultado_m = calcular_comprimento_sympy(u_ph, rho, t, E)
 
             if resultado_m is None:
-                raise Exception("Não foi possível encontrar uma solução real e positiva.")
+                raise Exception(
+                    "Não foi possível encontrar uma solução real e positiva."
+                )
 
             # 4. Formatação de Saída (SIMPLES)
             output = (
@@ -485,20 +481,16 @@ class App(ctk.CTk):
             self._update_result_box(result_box, output)
 
         except (ValueError, Exception) as e:
-            erro_msg = (
-                f"ERRO NA ENTRADA OU CÁLCULO\n"
-                f"--------------------\n"
-                f"{e}"
-            )
+            erro_msg = f"ERRO NA ENTRADA OU CÁLCULO\n--------------------\n{e}"
             self._update_result_box(result_box, erro_msg)
 
     def on_calc_espessura(self, mat_escolha, L_str, u_ph_str, result_box):
         try:
             L = self._parse_float(L_str)
             u_ph_mm = self._parse_float(u_ph_str)
-            
+
             u_ph = u_ph_mm / 1000  # mm para m
-            
+
             props = self._get_material_props(mat_escolha)
             rho = props["densidade"]
             E = props["modulo_elasticidade"]
@@ -506,19 +498,18 @@ class App(ctk.CTk):
             resultado_m = calcular_espessura_sympy(u_ph, rho, L, E)
 
             if resultado_m is None:
-                raise Exception("Não foi possível encontrar uma solução real e positiva.")
+                raise Exception(
+                    "Não foi possível encontrar uma solução real e positiva."
+                )
 
             # 4. Formatação de Saída (SIMPLES)
             output = f"Espessura da Parede (t): {resultado_m * 1000:.4f} mm"
             self._update_result_box(result_box, output)
 
         except (ValueError, Exception) as e:
-            erro_msg = (
-                f"ERRO NA ENTRADA OU CÁLCULO\n"
-                f"--------------------\n"
-                f"{e}"
-            )
+            erro_msg = f"ERRO NA ENTRADA OU CÁLCULO\n--------------------\n{e}"
             self._update_result_box(result_box, erro_msg)
+
 
 if __name__ == "__main__":
     if not os.path.exists(LOGO_PATH):
@@ -527,4 +518,3 @@ if __name__ == "__main__":
         print(f"DEBUG: logo.ico not found at {ICON_PATH}")
     app = App()
     app.mainloop()
-

@@ -1,5 +1,5 @@
 from enum import StrEnum
-from typing import Self
+from typing import Literal, Self
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -36,3 +36,20 @@ class Tubo(BaseModel):
 
     def espessura_valida(self, espessura: float) -> bool:
         return not (espessura <= 0 or espessura > self.diametro / 2)
+
+
+class Positive_Float(float):
+    """Tipo derivado de float que aceita apenas valores estritamente positivos (> 0)."""
+
+    def __new__(cls, value: float | str) -> Self:
+        value = super().__new__(cls, value)
+        if value <= 0:
+            raise ValueError(
+                f"O valor deve ser um número positivo (> 0), recebido: {value}"
+            )
+
+        return value
+
+    def __truediv__(self, value: float) -> Positive_Float:
+        res = super().__truediv__(value)
+        return Positive_Float(res)

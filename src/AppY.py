@@ -1,12 +1,12 @@
 import os
 import webbrowser
-from typing import Any, Literal
+from typing import Any
 
 import customtkinter as ctk
 import pandas as pd
 from PIL import Image, ImageTk
 
-import data_types as dt
+from src import data_types as dt
 from src.parametros_py import (
     calcular_comprimento_sympy,
     calcular_deslocamento,
@@ -303,14 +303,11 @@ class App(ctk.CTk):
 
         # 2. Crie a UI
         ui = self._create_calculator_ui(tab, inputs, "Calcular Deslocamento")
-        mat_escolha = dt.Materiais_Cadastrados(ui["material"].get())
-        comprimento = self._parse_float(ui["L"].get())
-        espessura = self._parse_float(ui["t"].get())
 
         # 3. Conecte o botão (a única parte única desta aba)
         ui["button"].configure(
             command=lambda: self.on_calc_deslocamento(
-                mat_escolha, comprimento, espessura, ui["result_box"]
+                ui["material"].get(), ui["L"].get(), ui["t"].get(), ui["result_box"]
             )
         )
 
@@ -323,15 +320,12 @@ class App(ctk.CTk):
         }
 
         ui = self._create_calculator_ui(tab, inputs, "Calcular Espessura")
-        mat_escolha = dt.Materiais_Cadastrados(ui["material"].get())
-        comprimento = self._parse_float(ui["L"].get())
-        deslocamento = (ui["deslocamento_pinhole"].get(),)
 
         ui["button"].configure(
             command=lambda: self.on_calc_espessura(
-                mat_escolha,
-                comprimento,
-                deslocamento,
+                ui["material"].get(),
+                ui["L"].get(),
+                ui["deslocamento_pinhole"].get(),
                 ui["result_box"],
             )
         )
@@ -417,16 +411,19 @@ class App(ctk.CTk):
 
     def on_calc_deslocamento(
         self,
-        mat_escolha: dt.Materiais_Cadastrados,
-        comprimento: float,
-        espessura: float,
+        mat_escolha: str,
+        comprimento: str,
+        espessura: str,
         result_box,
     ) -> None:
         try:
+            mat_escolha = dt.Materiais_Cadastrados(mat_escolha)
+            _comprimento = dt.Positive_Float(comprimento)
+            _espessura = dt.Positive_Float(espessura) / 1e3
             tubo = dt.Tubo(
                 diametro=0.1,
-                espessura=espessura,
-                comprimento=comprimento,
+                espessura=_espessura,
+                comprimento=_comprimento,
             )
 
             material = self._get_material_props(mat_escolha)
@@ -441,29 +438,30 @@ class App(ctk.CTk):
 
     def on_calc_identificar(
         self,
-        comprimento: float,
-        espessura: float,
-        deslocamento_pinhole: float,
+        comprimento: str,
+        espessura: str,
+        deslocamento_pinhole: str,
         result_box,
     ) -> None:
         try:
+            _comprimento = dt.Positive_Float(comprimento)
+            _deslocamento = dt.Positive_Float(deslocamento_pinhole) / 1e3
+            _espessura = dt.Positive_Float(espessura) / 1e3
             tubo = dt.Tubo(
-                comprimento=comprimento,
-                espessura=espessura,
+                comprimento=_comprimento,
+                espessura=_espessura,
                 diametro=0.1,
             )
 
-            material_identificado, diferenca = identificar_material(
-                tubo, deslocamento_pinhole
-            )
+            material_identificado, diferenca = identificar_material(tubo, _deslocamento)
 
-            erro_percentual = (diferenca / deslocamento_pinhole) * 100
+            erro_percentual = (diferenca / _deslocamento) * 100
 
             output = (
                 f"O material mais provável é: '{material_identificado}'\n\n"
                 f"Detalhes da Análise:\n"
-                f"  Diferença absoluta: {diferenca:.2e} m\n"
-                f"  Erro percentual: {erro_percentual:.2f}%"
+                f"Diferença absoluta: {diferenca:.2e} m\n"
+                f"Erro percentual: {erro_percentual:.2f}%"
             )
             self._update_result_box(result_box, output)
 
@@ -473,20 +471,21 @@ class App(ctk.CTk):
 
     def on_calc_comprimento(
         self,
-        mat_escolha: dt.Materiais_Cadastrados,
-        espessura: float,
-        deslocamento_pinhole: float,
+        mat_escolha: str,
+        espessura: str,
+        deslocamento_pinhole: str,
         result_box,
     ) -> None:
         try:
+            mat_escolha = dt.Materiais_Cadastrados(mat_escolha)
+            _deslocamento = dt.Positive_Float(deslocamento_pinhole) / 1e3
+            _espessura = dt.Positive_Float(espessura) / 1e3
             tubo = dt.Tubo(
                 diametro=0.1,
-                espessura=espessura,
+                espessura=_espessura,
             )
             material = self._get_material_props(mat_escolha)
-            resultado_m = calcular_comprimento_sympy(
-                deslocamento_pinhole, tubo, material
-            )
+            resultado_m = calcular_comprimento_sympy(_deslocamento, tubo, material)
             output = f"Comprimento: {resultado_m:.2e} m"
             self._update_result_box(result_box, output)
 
@@ -496,20 +495,23 @@ class App(ctk.CTk):
 
     def on_calc_espessura(
         self,
-        mat_escolha: dt.Materiais_Cadastrados,
-        comprimento: float,
-        deslocamento_pinhole: float,
+        mat_escolha: str,
+        comprimento: str,
+        deslocamento_pinhole: str,
         result_box,
     ) -> None:
         try:
+            mat_escolha = dt.Materiais_Cadastrados(mat_escolha)
+            _comprimento = dt.Positive_Float(comprimento)
+            _deslocamento = dt.Positive_Float(deslocamento_pinhole) / 1e3
             tubo = dt.Tubo(
                 diametro=0.1,
-                comprimento=self._parse_float(comprimento),
+                comprimento=_comprimento,
             )
             material = self._get_material_props(mat_escolha)
-            resultado_m = calcular_espessura_sympy(deslocamento_pinhole, tubo, material)
+            resultado_m = calcular_espessura_sympy(_deslocamento, tubo, material)
 
-            output = f"Espessura da Parede (t): {resultado_m:.2e} m"
+            output = f"Espessura da Parede: {resultado_m:.2e} m"
             self._update_result_box(result_box, output)
 
         except ValueError as e:
