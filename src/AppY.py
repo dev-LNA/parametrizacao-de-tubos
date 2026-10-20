@@ -1,5 +1,5 @@
-import os
 import webbrowser
+from pathlib import Path
 from typing import Any
 
 import customtkinter as ctk
@@ -13,7 +13,7 @@ from src.parametros_py import (
     calcular_espessura_sympy,
     identificar_material,
 )
-from src.utils import ARQUIVO_CSV, ICON_PATH, LINK_URL, LOGO_PATH, obter_caminho_recurso
+from src.utils import ARQUIVO_CSV, LINK_URL, obter_caminho_recurso
 
 
 class App(ctk.CTk):
@@ -22,7 +22,7 @@ class App(ctk.CTk):
 
         self.title("Parametrização de Tubos")
 
-        self.geometry("550x600")
+        self.geometry("550x900")
         # self.minsize(550, 600)
         self.minsize(650, 600)
         # screen_width = self.winfo_screenwidth()
@@ -60,53 +60,74 @@ class App(ctk.CTk):
 
     def create_header(self) -> None:
         # --- Configura ícone da janela (canto superior esquerdo) ---
-        if os.path.exists(ICON_PATH):
-            try:
-                self.iconbitmap(ICON_PATH)
-            except Exception as e:
-                try:
-                    pil_icon = Image.open(ICON_PATH).convert("RGBA")
-                    self.icon_photo_image = ImageTk.PhotoImage(pil_icon)
-                    self.iconphoto(False, self.icon_photo_image)  # type: ignore
-                except Exception as e2:
-                    print(
-                        f"Erro ao definir ícone da janela a partir de {ICON_PATH}: {e} / {e2}"
-                    )
-        else:
-            print(f"Aviso: Ícone da janela não encontrado em {ICON_PATH}")
+        # if os.path.exists(ICON_PATH):
+        #     try:
+        #         self.iconbitmap(ICON_PATH)
+        #     except Exception as e:
+        #         try:
+        #             pil_icon = Image.open(ICON_PATH).convert("RGBA")
+        #             self.icon_photo_image = ImageTk.PhotoImage(pil_icon)
+        #             self.iconphoto(False, self.icon_photo_image)  # type: ignore
+        #         except Exception as e2:
+        #             print(
+        #                 f"Erro ao definir ícone da janela a partir de {ICON_PATH}: {e} / {e2}"
+        #             )
+        # else:
+        #     print(f"Aviso: Ícone da janela não encontrado em {ICON_PATH}")
 
         # --- Carrega logo do cabeçalho (dentro do app) ---
         self.logo_image_ctk = None
-        if os.path.exists(LOGO_PATH):
-            try:
-                # Este código é apenas para o LOGO DO CABEÇALHO (o .png)
-                pil_image = Image.open(LOGO_PATH).convert("RGBA")
+        # if os.path.exists(LOGO_PATH):
+        #     try:
+        #         # Este código é apenas para o LOGO DO CABEÇALHO (o .png)
+        #         pil_image = Image.open(LOGO_PATH).convert("RGBA")
 
-                self.logo_image_ctk = ctk.CTkImage(
-                    light_image=pil_image,
-                    dark_image=pil_image,
-                    size=(140, 33),  # Tamanho desejado do logo
-                )
-            except Exception as e:
-                print(f"Erro ao carregar LOGO DO CABEÇALHO de {LOGO_PATH}: {e}")
-        else:
-            print(f"Aviso: Logo do cabeçalho não encontrado em {LOGO_PATH}")
+        #         self.logo_image_ctk = ctk.CTkImage(
+        #             light_image=pil_image,
+        #             dark_image=pil_image,
+        #             size=(140, 33),  # Tamanho desejado do logo
+        #         )
+        #     except Exception as e:
+        #         print(f"Erro ao carregar LOGO DO CABEÇALHO de {LOGO_PATH}: {e}")
+        # else:
+        #     print(f"Aviso: Logo do cabeçalho não encontrado em {LOGO_PATH}")
 
         self.header_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.header_frame.grid(row=0, column=0, padx=20, pady=(20, 0), sticky="ew")
 
-        if self.logo_image_ctk:
-            self.logo_label = ctk.CTkLabel(
-                self.header_frame, image=self.logo_image_ctk, text=""
-            )
-            self.logo_label.pack(side="left", padx=(0, 15))
-
         self.title_label = ctk.CTkLabel(
             self.header_frame,
             text="Parametrização de Tubos",
-            font=ctk.CTkFont(size=20, weight="bold"),
+            font=ctk.CTkFont(size=24, weight="bold"),
         )
-        self.title_label.pack(side="left")
+        self.title_label.pack(side="top", padx=(0, 15))
+
+        arquivo_imagem_tubo = obter_caminho_recurso() / Path(
+            "src/imagens/tubo exemplo.png"
+        )
+        pil_image = Image.open(arquivo_imagem_tubo).convert("RGBA")
+        self.imagem_tubo = ctk.CTkImage(
+            light_image=pil_image,
+            dark_image=pil_image,
+            size=(500, 200),  # Tamanho desejado do logo
+        )
+        self.imagem_tubo_label = ctk.CTkLabel(
+            self.header_frame, image=self.imagem_tubo, text=""
+        )
+        self.imagem_tubo_label.pack(side="top", padx=(0, 15), pady=(15, 0))
+
+        self.label_aviso = ctk.CTkLabel(
+            self.header_frame,
+            text="Atenção: o pinhole fica a uma distância de 100 mm da base do tubo.",
+            font=ctk.CTkFont(size=12),
+        )
+        self.label_aviso.pack(side="top", padx=(0, 15))
+
+        # if self.logo_image_ctk:
+        #     self.logo_label = ctk.CTkLabel(
+        #         self.header_frame, image=self.logo_image_ctk, text=""
+        #     )
+        #     self.logo_label.pack(side="left", padx=(0, 15))
 
     def create_footer(self) -> None:
         """Cria o rodapé com informações e link."""
@@ -297,8 +318,9 @@ class App(ctk.CTk):
         # 1. Defina os inputs que esta aba precisa
         inputs = {
             "material": None,  # O "None" significa "crie o dropdown de material"
-            "L": ("Comprimento em metros:", "Ex: 1.5"),
-            "t": ("Espessura (t) em mm:", "Ex: 25.4"),
+            "L": ("Comprimento (mm):", "Ex: 1500"),
+            "D": ("Diâmetro (mm)", "Ex: 100"),
+            "t": ("Espessura (mm):", "Ex: 25.4"),
         }
 
         # 2. Crie a UI
@@ -307,7 +329,11 @@ class App(ctk.CTk):
         # 3. Conecte o botão (a única parte única desta aba)
         ui["button"].configure(
             command=lambda: self.on_calc_deslocamento(
-                ui["material"].get(), ui["L"].get(), ui["t"].get(), ui["result_box"]
+                ui["material"].get(),
+                ui["L"].get(),
+                ui["D"].get(),
+                ui["t"].get(),
+                ui["result_box"],
             )
         )
 
@@ -315,8 +341,9 @@ class App(ctk.CTk):
         """Popula a Aba 2: Calcular Espessura (t)"""
         inputs = {
             "material": None,
-            "L": ("Comprimento em metros:", "Ex: 1.5"),
-            "deslocamento_pinhole": ("Deslocamento em mm:", "Ex: 0.123"),
+            "L": ("Comprimento (mm):", "Ex: 1500"),
+            "D": ("Diâmetro (mm)", "Ex: 100"),
+            "deslocamento_pinhole": ("Deslocamento (mm):", "Ex: 0.01"),
         }
 
         ui = self._create_calculator_ui(tab, inputs, "Calcular Espessura")
@@ -325,6 +352,7 @@ class App(ctk.CTk):
             command=lambda: self.on_calc_espessura(
                 ui["material"].get(),
                 ui["L"].get(),
+                ui["D"].get(),
                 ui["deslocamento_pinhole"].get(),
                 ui["result_box"],
             )
@@ -334,9 +362,10 @@ class App(ctk.CTk):
         """Popula a Aba 3: Identificar Material"""
         inputs = {
             # Note: Sem "material" aqui!
-            "L": ("Comprimento em metros:", "Ex: 1.5"),
-            "t": ("Espessura (t) em mm:", "Ex: 2.4"),
-            "deslocamento_pinhole": ("Deslocamento medido em mm:", "Ex: 0.123"),
+            "L": ("Comprimento (mm):", "Ex: 1500"),
+            "D": ("Diâmetro (mm)", "Ex: 100"),
+            "t": ("Espessura (mm):", "Ex: 25"),
+            "deslocamento_pinhole": ("Deslocamento (mm):", "Ex: 0.01"),
         }
 
         ui = self._create_calculator_ui(tab, inputs, "Identificar Material")
@@ -354,8 +383,9 @@ class App(ctk.CTk):
         """Popula a Aba 4: Calcular Comprimento"""
         inputs = {
             "material": None,
-            "t": ("Espessura (t) em mm:", "Ex: 25.4"),
-            "deslocamento_pinhole": ("Deslocamento em mm:", "Ex: 0.123"),
+            "D": ("Diâmetro (mm)", "Ex: 100"),
+            "t": ("Espessura (mm):", "Ex: 25"),
+            "deslocamento_pinhole": ("Deslocamento (mm):", "Ex: 0.01"),
         }
 
         ui = self._create_calculator_ui(tab, inputs, "Calcular Comprimento")
@@ -413,15 +443,17 @@ class App(ctk.CTk):
         self,
         mat_escolha: str,
         comprimento: str,
+        diametro: str,
         espessura: str,
         result_box,
     ) -> None:
         try:
             mat_escolha = dt.Materiais_Cadastrados(mat_escolha)
-            _comprimento = dt.Positive_Float(comprimento)
+            _comprimento = dt.Positive_Float(comprimento) / 1e3
+            _diametro = dt.Positive_Float(diametro) / 1e3
             _espessura = dt.Positive_Float(espessura) / 1e3
             tubo = dt.Tubo(
-                diametro=0.1,
+                diametro=_diametro,
                 espessura=_espessura,
                 comprimento=_comprimento,
             )
@@ -444,7 +476,7 @@ class App(ctk.CTk):
         result_box,
     ) -> None:
         try:
-            _comprimento = dt.Positive_Float(comprimento)
+            _comprimento = dt.Positive_Float(comprimento) / 1e3
             _deslocamento = dt.Positive_Float(deslocamento_pinhole) / 1e3
             _espessura = dt.Positive_Float(espessura) / 1e3
             tubo = dt.Tubo(
@@ -497,15 +529,17 @@ class App(ctk.CTk):
         self,
         mat_escolha: str,
         comprimento: str,
+        diametro: str,
         deslocamento_pinhole: str,
         result_box,
     ) -> None:
         try:
             mat_escolha = dt.Materiais_Cadastrados(mat_escolha)
-            _comprimento = dt.Positive_Float(comprimento)
+            _comprimento = dt.Positive_Float(comprimento) / 1e3
+            _diametro = dt.Positive_Float(diametro) / 1e3
             _deslocamento = dt.Positive_Float(deslocamento_pinhole) / 1e3
             tubo = dt.Tubo(
-                diametro=0.1,
+                diametro=_diametro,
                 comprimento=_comprimento,
             )
             material = self._get_material_props(mat_escolha)

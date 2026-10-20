@@ -30,7 +30,7 @@ class Tubo(BaseModel):
     def valida_espessura(self) -> Self:
         if 2 * self.espessura > self.diametro:
             raise ValueError(
-                f"A espessura deve ser menor do que {self.diametro / 2}: {self.espessura}"
+                f"A espessura deve ser menor do que {self.diametro / 2} m: {self.espessura}"
             )
         return self
 
