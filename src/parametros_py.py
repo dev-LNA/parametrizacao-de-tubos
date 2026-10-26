@@ -6,7 +6,7 @@ import sympy
 from scipy.constants import g as gravidade
 
 from src import data_types as dt
-from src.utils import ARQUIVO_CSV, obter_caminho_recurso
+from src.utils import ARQUIVO_CSV
 
 
 def calcular_area(diametro: float, espessura: float) -> float:
@@ -44,14 +44,13 @@ def calcular_deslocamento(
 def identificar_material(
     tubo: dt.Tubo,
     deslocamento_medido: dt.Positive_Float,
-) -> tuple[str, float]:
+) -> tuple[str, dt.Positive_Float]:
     """Compara o deslocamento medido com o deslocamento teórico de cada material."""
 
     melhor_material = None
     menor_diferenca = float("inf")
 
-    caminho_arquivo_csv = obter_caminho_recurso() / ARQUIVO_CSV
-    materiais = pd.read_csv(caminho_arquivo_csv)
+    materiais = pd.read_csv(ARQUIVO_CSV)
 
     for _, linha in materiais.iterrows():
         material = dt.Material(
@@ -72,7 +71,7 @@ def identificar_material(
     if melhor_material is None:
         raise RuntimeError("Não foi possível encontrar o material especificado.")
 
-    return melhor_material, menor_diferenca
+    return melhor_material, dt.Positive_Float(menor_diferenca)
 
 
 def calcular_comprimento_sympy(
@@ -152,8 +151,7 @@ def main() -> None:
     t1 = time()
     # Exemplo de uso das funções
 
-    caminho_arquivo_csv = obter_caminho_recurso() / ARQUIVO_CSV
-    materiais = pd.read_csv(caminho_arquivo_csv)
+    materiais = pd.read_csv(ARQUIVO_CSV)
     row = materiais[materiais["apelido"] == "aluminio_6061_t6"]
 
     material = dt.Material(

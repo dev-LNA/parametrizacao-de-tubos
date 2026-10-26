@@ -1,10 +1,11 @@
 import webbrowser
 from pathlib import Path
+from time import sleep
 from typing import Any
 
 import customtkinter as ctk
 import pandas as pd
-from PIL import Image, ImageTk
+from PIL import Image
 
 from src import data_types as dt
 from src.parametros_py import (
@@ -13,7 +14,7 @@ from src.parametros_py import (
     calcular_espessura_sympy,
     identificar_material,
 )
-from src.utils import ARQUIVO_CSV, LINK_URL, obter_caminho_recurso
+from src.utils import ARQUIVO_CSV, LINK_URL
 
 
 class App(ctk.CTk):
@@ -38,8 +39,8 @@ class App(ctk.CTk):
         ctk.set_default_color_theme("blue")
         self.button_color = "#14386e"
 
-        caminho_arquivo_csv = obter_caminho_recurso() / ARQUIVO_CSV
-        materiais = pd.read_csv(caminho_arquivo_csv)
+        # caminho_arquivo_csv = obter_caminho_recurso() / ARQUIVO_CSV
+        materiais = pd.read_csv(ARQUIVO_CSV)
 
         self.materiais_list = materiais["nome"].to_list()
 
@@ -102,9 +103,7 @@ class App(ctk.CTk):
         )
         self.title_label.pack(side="top", padx=(0, 15))
 
-        arquivo_imagem_tubo = obter_caminho_recurso() / Path(
-            "src/imagens/tubo exemplo.png"
-        )
+        arquivo_imagem_tubo = Path("src/imagens/tubo exemplo.png")
         pil_image = Image.open(arquivo_imagem_tubo).convert("RGBA")
         self.imagem_tubo = ctk.CTkImage(
             light_image=pil_image,
@@ -228,6 +227,7 @@ class App(ctk.CTk):
         box.configure(state="normal")
         box.delete("1.0", "end")
         box.insert("1.0", text)
+        box.update_idletasks()
         box.configure(state="disabled")
 
     # --- Criação das Abas ---
@@ -318,9 +318,9 @@ class App(ctk.CTk):
         # 1. Defina os inputs que esta aba precisa
         inputs = {
             "material": None,  # O "None" significa "crie o dropdown de material"
-            "L": ("Comprimento (mm):", "Ex: 1500"),
+            "L": ("Comprimento (mm):", "Ex: 1000"),
             "D": ("Diâmetro (mm)", "Ex: 100"),
-            "t": ("Espessura (mm):", "Ex: 25.4"),
+            "t": ("Espessura (mm):", "Ex: 10"),
         }
 
         # 2. Crie a UI
@@ -341,9 +341,9 @@ class App(ctk.CTk):
         """Popula a Aba 2: Calcular Espessura (t)"""
         inputs = {
             "material": None,
-            "L": ("Comprimento (mm):", "Ex: 1500"),
+            "L": ("Comprimento (mm):", "Ex: 1000"),
             "D": ("Diâmetro (mm)", "Ex: 100"),
-            "deslocamento_pinhole": ("Deslocamento (mm):", "Ex: 0.01"),
+            "deslocamento_pinhole": ("Deslocamento (mm):", "Ex: 0.044"),
         }
 
         ui = self._create_calculator_ui(tab, inputs, "Calcular Espessura")
@@ -362,10 +362,10 @@ class App(ctk.CTk):
         """Popula a Aba 3: Identificar Material"""
         inputs = {
             # Note: Sem "material" aqui!
-            "L": ("Comprimento (mm):", "Ex: 1500"),
+            "L": ("Comprimento (mm):", "Ex: 1000"),
             "D": ("Diâmetro (mm)", "Ex: 100"),
-            "t": ("Espessura (mm):", "Ex: 25"),
-            "deslocamento_pinhole": ("Deslocamento (mm):", "Ex: 0.01"),
+            "t": ("Espessura (mm):", "Ex: 10"),
+            "deslocamento_pinhole": ("Deslocamento (mm):", "Ex: 0.05"),
         }
 
         ui = self._create_calculator_ui(tab, inputs, "Identificar Material")
@@ -384,8 +384,8 @@ class App(ctk.CTk):
         inputs = {
             "material": None,
             "D": ("Diâmetro (mm)", "Ex: 100"),
-            "t": ("Espessura (mm):", "Ex: 25"),
-            "deslocamento_pinhole": ("Deslocamento (mm):", "Ex: 0.01"),
+            "t": ("Espessura (mm):", "Ex: 10"),
+            "deslocamento_pinhole": ("Deslocamento (mm):", "Ex: 1"),
         }
 
         ui = self._create_calculator_ui(tab, inputs, "Calcular Comprimento")
@@ -399,29 +399,12 @@ class App(ctk.CTk):
             )
         )
 
-    def _parse_float(self, text_value) -> float:
-        """
-        Converte um texto para float, aceitando '.' ou ',' como decimal.
-        Lança um ValueError com uma mensagem clara se falhar.
-        """
-        if not text_value:
-            # O botão dinâmico deve prevenir isso, mas é uma boa garantia
-            raise ValueError("O campo não pode estar vazio.")
-        try:
-            # Limpa espaços e substitui vírgula por ponto
-            cleaned_value = text_value.strip().replace(",", ".")
-            return float(cleaned_value)
-        except ValueError:
-            # Lança um erro mais específico para o usuário
-            raise ValueError(f"'{text_value}' não é um número válido.")
-
     def _get_material_props(self, mat_escolha: dt.Materiais_Cadastrados) -> dt.Material:
         """
         Encontra e retorna o dicionário de propriedades do material.
         Lança um Exception se não encontrar.
         """
-        caminho_arquivo_csv = obter_caminho_recurso() / ARQUIVO_CSV
-        materiais = pd.read_csv(caminho_arquivo_csv)
+        materiais = pd.read_csv(ARQUIVO_CSV)
 
         if mat_escolha not in materiais["nome"].to_list():
             # Se o loop terminar sem encontrar, lança um erro
@@ -447,6 +430,8 @@ class App(ctk.CTk):
         espessura: str,
         result_box,
     ) -> None:
+        self._update_result_box(result_box, "")
+        sleep(0.2)
         try:
             mat_escolha = dt.Materiais_Cadastrados(mat_escolha)
             _comprimento = dt.Positive_Float(comprimento) / 1e3
@@ -461,7 +446,7 @@ class App(ctk.CTk):
             material = self._get_material_props(mat_escolha)
             resultado_m = calcular_deslocamento(tubo, material)
 
-            output = f"Deslocamento: {resultado_m:.2e} m\n"
+            output = f"Deslocamento: {resultado_m.milimetros:.2e} mm\n"
             self._update_result_box(result_box, output)
 
         except ValueError as e:
@@ -475,6 +460,8 @@ class App(ctk.CTk):
         deslocamento_pinhole: str,
         result_box,
     ) -> None:
+        self._update_result_box(result_box, "")
+        sleep(0.2)
         try:
             _comprimento = dt.Positive_Float(comprimento) / 1e3
             _deslocamento = dt.Positive_Float(deslocamento_pinhole) / 1e3
@@ -492,7 +479,7 @@ class App(ctk.CTk):
             output = (
                 f"O material mais provável é: '{material_identificado}'\n\n"
                 f"Detalhes da Análise:\n"
-                f"Diferença absoluta: {diferenca:.2e} m\n"
+                f"Diferença absoluta: {diferenca.milimetros:.2e} mm\n"
                 f"Erro percentual: {erro_percentual:.2f}%"
             )
             self._update_result_box(result_box, output)
@@ -508,6 +495,8 @@ class App(ctk.CTk):
         deslocamento_pinhole: str,
         result_box,
     ) -> None:
+        self._update_result_box(result_box, "")
+        sleep(0.2)
         try:
             mat_escolha = dt.Materiais_Cadastrados(mat_escolha)
             _deslocamento = dt.Positive_Float(deslocamento_pinhole) / 1e3
@@ -518,7 +507,7 @@ class App(ctk.CTk):
             )
             material = self._get_material_props(mat_escolha)
             resultado_m = calcular_comprimento_sympy(_deslocamento, tubo, material)
-            output = f"Comprimento: {resultado_m:.2e} m"
+            output = f"Comprimento: {resultado_m.milimetros:.2e} mm"
             self._update_result_box(result_box, output)
 
         except ValueError as e:
@@ -533,6 +522,8 @@ class App(ctk.CTk):
         deslocamento_pinhole: str,
         result_box,
     ) -> None:
+        self._update_result_box(result_box, "")
+        sleep(0.2)
         try:
             mat_escolha = dt.Materiais_Cadastrados(mat_escolha)
             _comprimento = dt.Positive_Float(comprimento) / 1e3
@@ -545,7 +536,7 @@ class App(ctk.CTk):
             material = self._get_material_props(mat_escolha)
             resultado_m = calcular_espessura_sympy(_deslocamento, tubo, material)
 
-            output = f"Espessura da Parede: {resultado_m:.2e} m"
+            output = f"Espessura da Parede: {resultado_m.milimetros:.2e} mm"
             self._update_result_box(result_box, output)
 
         except ValueError as e:
