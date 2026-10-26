@@ -50,10 +50,10 @@ class Positive_Float(float):
 
         return value
 
-    @property
-    def milimetros(self) -> Positive_Float:
-        return Positive_Float(self * 1e3)
-
     def __truediv__(self, value: float) -> Positive_Float:
         res = super().__truediv__(value)
+        return Positive_Float(res)
+
+    def __mul__(self, value: float) -> float:
+        res = super().__mul__(value)
         return Positive_Float(res)

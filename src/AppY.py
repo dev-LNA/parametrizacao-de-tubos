@@ -446,7 +446,7 @@ class App(ctk.CTk):
             material = self._get_material_props(mat_escolha)
             resultado_m = calcular_deslocamento(tubo, material)
 
-            output = f"Deslocamento: {resultado_m.milimetros:.2e} mm\n"
+            output = f"Deslocamento: {resultado_m * 1e3:.2e} mm\n"
             self._update_result_box(result_box, output)
 
         except ValueError as e:
@@ -479,7 +479,7 @@ class App(ctk.CTk):
             output = (
                 f"O material mais provável é: '{material_identificado}'\n\n"
                 f"Detalhes da Análise:\n"
-                f"Diferença absoluta: {diferenca.milimetros:.2e} mm\n"
+                f"Diferença absoluta: {diferenca * 1e3:.2e} mm\n"
                 f"Erro percentual: {erro_percentual:.2f}%"
             )
             self._update_result_box(result_box, output)
@@ -507,7 +507,7 @@ class App(ctk.CTk):
             )
             material = self._get_material_props(mat_escolha)
             resultado_m = calcular_comprimento_sympy(_deslocamento, tubo, material)
-            output = f"Comprimento: {resultado_m.milimetros:.2e} mm"
+            output = f"Comprimento: {resultado_m * 1e3:.2e} mm"
             self._update_result_box(result_box, output)
 
         except ValueError as e:
@@ -536,7 +536,7 @@ class App(ctk.CTk):
             material = self._get_material_props(mat_escolha)
             resultado_m = calcular_espessura_sympy(_deslocamento, tubo, material)
 
-            output = f"Espessura da Parede: {resultado_m.milimetros:.2e} mm"
+            output = f"Espessura da Parede: {resultado_m * 1e3:.2e} mm"
             self._update_result_box(result_box, output)
 
         except ValueError as e:
