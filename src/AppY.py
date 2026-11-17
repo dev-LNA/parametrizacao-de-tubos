@@ -21,7 +21,7 @@ class App(ctk.CTk):
     def __init__(self) -> None:
         super().__init__()
 
-        self.title("Parametrização de Tubos")
+        self.title("Parametrização de Tubos Metálicos")
 
         self.geometry("550x900")
         # self.minsize(550, 600)
@@ -35,7 +35,7 @@ class App(ctk.CTk):
         # self.geometry(f"{start_width}x{start_height}+{x_pos}+{y_pos}")
 
         # Configurações de tema
-        ctk.set_appearance_mode("System")
+        ctk.set_appearance_mode("Dark")
         ctk.set_default_color_theme("blue")
         self.button_color = "#14386e"
 
@@ -98,7 +98,7 @@ class App(ctk.CTk):
 
         self.title_label = ctk.CTkLabel(
             self.header_frame,
-            text="Parametrização de Tubos",
+            text="Parametrização de Tubos Metálicos",
             font=ctk.CTkFont(size=24, weight="bold"),
         )
         self.title_label.pack(side="top", padx=(0, 15))

@@ -1,5 +1,5 @@
-# Parametrização de tubos
+# Parametrização de Tubos Metálicos (PTM)
 
-O software Parametrização de Tubos foi desenvolvido para o cálculo de parâmetros dimensionais de tubos metálicos fabricados em aço e alumínio. Os valores determinados por este software servem como uma estimativa inicial para os parâmetros de entrada necessários durante simulações mecânicas realizadas para este tipo de peça.
+Parametrização de Tubos Metálicos (PTM) é um programa de computador desenvolvido através da linguagem de programação Python para a realização de cálculos e simulações relacionados a tubos metálicos circulares, a partir de um conjunto de dados de entrada fornecido pelo usuário. As funcionalidades de cálculo compreendem a determinação de dois parâmetros dimensionais do tubo, que são o comprimento ou a espessura. As funcionalidades de simulação retornam o resultado do comportamento do tubo para dois diferentes cenários. No primeiro,  é estimado o deslocamento vertical experimentado por um tubo metálico com uma de suas extremidades fixas numa parede, devido à ação de seu próprio peso. No segundo, o programa determina o material de fabricação do tubo, dentre as opções existentes no código, que mais se adeque às condições de entrada fornecidas pelo usuário.
 
 ![gui](docs/gui.png)
