@@ -21,7 +21,7 @@ class App(ctk.CTk):
     def __init__(self) -> None:
         super().__init__()
 
-        self.title("Parametrização de Tubos Metálicos")
+        self.title("Parametrização de Tubos Ópticos")
 
         self.geometry("550x900")
         # self.minsize(550, 600)
@@ -98,7 +98,7 @@ class App(ctk.CTk):
 
         self.title_label = ctk.CTkLabel(
             self.header_frame,
-            text="Parametrização de Tubos Metálicos",
+            text="Parametrização de Tubos Ópticos",
             font=ctk.CTkFont(size=24, weight="bold"),
         )
         self.title_label.pack(side="top", padx=(0, 15))
@@ -117,7 +117,7 @@ class App(ctk.CTk):
 
         self.label_aviso = ctk.CTkLabel(
             self.header_frame,
-            text="Atenção: o pinhole fica a uma distância de 100 mm da base do tubo.",
+            text="Atenção: o pinhole fica a uma distância de 100 mm da extremidade do tubo.",
             font=ctk.CTkFont(size=12),
         )
         self.label_aviso.pack(side="top", padx=(0, 15))
